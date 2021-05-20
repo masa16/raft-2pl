@@ -24,15 +24,15 @@ using namespace std;
 int
 main(void)
 {
-	vector<int> lock_list;
+    vector<int> lock_list;
 
-	lock_list.push_back(3);
-	lock_list.push_back(4);
-	lock_list.push_back(1);
+    lock_list.push_back(3);
+    lock_list.push_back(4);
+    lock_list.push_back(1);
 
-	for (auto itr = lock_list.begin(); itr != lock_list.end(); itr++) cout << *itr;
-	sort(lock_list.begin(), lock_list.end());
-	for (auto itr = lock_list.begin(); itr != lock_list.end(); itr++) cout << *itr;
+    for (auto itr = lock_list.begin(); itr != lock_list.end(); itr++) cout << *itr;
+    sort(lock_list.begin(), lock_list.end());
+    for (auto itr = lock_list.begin(); itr != lock_list.end(); itr++) cout << *itr;
 
-	return 0;
+    return 0;
 }

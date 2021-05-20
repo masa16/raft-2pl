@@ -34,33 +34,33 @@ using std::queue;
 
 class Log : public FileHandler {
 private:
-	mutex _mutexEntry;
-	vector<entry> _entry;
-	//queue<client_command> _command;
-	int lastSyncedIndex;
+    mutex _mutexEntry;
+    vector<entry> _entry;
+    //queue<client_command> _command;
+    int lastSyncedIndex;
 
 public:
-	Log(string storageDirectoryName, int workerId);
-  ~Log();
+    Log(string storageDirectoryName, int workerId);
+    ~Log();
 
-  int fd;
-	int getSizeEntry();
-	int getMaxIndexOfEntry();
-	int lastLogIndex();
-	int lastLogTerm();
-	int getTerm(int index);
-	int getPrevTerm(int prevLogIndex);
-	int getConnectionId(int index);
-	bool match(int index, int term);
-	entry getEntry(int index);
-	// void addEntryLeader(append_entries_rpc arpc);
-	//void addEntryFollower(entry groupEntry[], uint szGroup);
-	void addEntry(entry e);
-	void lockEntry();
-	void unlockEntry();
-	int getLastSyncedIndex();
-	void sync();
-	void printAll();
+    int fd;
+    int getSizeEntry();
+    int getMaxIndexOfEntry();
+    int lastLogIndex();
+    int lastLogTerm();
+    int getTerm(int index);
+    int getPrevTerm(int prevLogIndex);
+    int getConnectionId(int index);
+    bool match(int index, int term);
+    entry getEntry(int index);
+    // void addEntryLeader(append_entries_rpc arpc);
+    //void addEntryFollower(entry groupEntry[], uint szGroup);
+    void addEntry(entry e);
+    void lockEntry();
+    void unlockEntry();
+    int getLastSyncedIndex();
+    void sync();
+    void printAll();
 };
 
 #endif //LOG_H

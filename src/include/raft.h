@@ -32,7 +32,7 @@
 #include <ifaddrs.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/socket.h> 
+#include <sys/socket.h>
 
 #include <sys/time.h>
 #include <netdb.h>
@@ -96,134 +96,134 @@ class ClientNode;
 class WorkerInfo;
 
 /*
-high_resolution_clock::time_point first_log_time;
-high_resolution_clock::time_point end_time;
-system_clock::time_point start;
-system_clock::time_point end;
+  high_resolution_clock::time_point first_log_time;
+  high_resolution_clock::time_point end_time;
+  system_clock::time_point start;
+  system_clock::time_point end;
 */
 
 typedef struct _worker_args {
-	Raft* raft;
-	RaftNode* rNode;
-	ClientNode* cNode;
-	bool isClient;
-	HEADER header;
+    Raft* raft;
+    RaftNode* rNode;
+    ClientNode* cNode;
+    bool isClient;
+    HEADER header;
 } worker_args;
 
 
 class Raft {
 private:
-	mutex _mtx;
-	mutex _mtx_next_index;
-	
-	Config* config;
-	Status* status;
-	KVS* kvs;
-	vector<RaftNode*>* raftNodes;
-	vector<ClientNode*>* clientNodes;
-  vector<WorkerInfo*>* workerInfos;
-	int me;
-	high_resolution_clock::time_point startTime;
+    mutex _mtx;
+    mutex _mtx_next_index;
 
-	int leaderTerm;
-	int vote;
-	int _lsn = 0; // log sequence number
-	
-	int commitCount;
-  //int notifierSock;
+    Config* config;
+    Status* status;
+    KVS* kvs;
+    vector<RaftNode*>* raftNodes;
+    vector<ClientNode*>* clientNodes;
+    vector<WorkerInfo*>* workerInfos;
+    int me;
+    high_resolution_clock::time_point startTime;
 
-	map<int, int> readRPCIds;
+    int leaderTerm;
+    int vote;
+    int _lsn = 0; // log sequence number
 
-	mutex _mtx_ackQ;
-	mutex _mtx_lsn; // log sequence number
-	queue<response_append_entries> ackQ;
-	
-	/* === private functions === */
-	void setRaftNodesByConfig();
-	//void candidacy();
-	//void outputMeasureResults();
-	//void sendCommitMessage();
+    int commitCount;
+    //int notifierSock;
 
-	void setupLeader();
-	void setupFollower(int sockfd, HEADER header);
-  void setupNotifier();
-	void notifier(int sockfd, int rNodeId, HEADER header);
-	void worker(WorkerInfo* workerInfo);
-	void committer();	
-	void producer(int sockfd, HEADER h, ClientNode *cNode, int workerId);	
-	void logReceiver(int sockfd, HEADER header);
-	
-	void closeClient(ClientNode* cNode, int sockfd);
+    map<int, int> readRPCIds;
+
+    mutex _mtx_ackQ;
+    mutex _mtx_lsn; // log sequence number
+    queue<response_append_entries> ackQ;
+
+    /* === private functions === */
+    void setRaftNodesByConfig();
+    //void candidacy();
+    //void outputMeasureResults();
+    //void sendCommitMessage();
+
+    void setupLeader();
+    void setupFollower(int sockfd, HEADER header);
+    void setupNotifier();
+    void notifier(int sockfd, int rNodeId, HEADER header);
+    void worker(WorkerInfo* workerInfo);
+    void committer();
+    void producer(int sockfd, HEADER h, ClientNode *cNode, int workerId);
+    void logReceiver(int sockfd, HEADER header);
+
+    void closeClient(ClientNode* cNode, int sockfd);
 
 
-  void sendRPC(int sockfd, HEADER h, char *payload);
-  //void sendRPC(RaftNode* rNode, HEADER h, char *payload);
-  void sendRPC(ClientNode* me,  HEADER h, char *payload);
-  //void sendRPC(Raft* raft, RaftNode* rNode, HEADER h, append_entries_rpc* payload, entry groupEntry[], const uint szGroup);
-  int connect2raftnode(RaftNode* rNode);
-  //void startWorkerThread(Raft* raft, RaftNode* rNode, ClientNode* cNode, bool isClient, HEADER header);
-  //void requestLocationReceived(Raft* raft, ClientNode* cNode, uint size, uint sockfd);
-  //void unlock_and_setIndex(Raft *raft, const int nIndex);
-  //void responseAppendEntriesReceived(Raft* raft, RaftNode* rNode, uint size, uint sockfd);
-	int getLogSequenceNumber();
-	
-	response_append_entries ackDequeue();
-	void ackEnqueue(response_append_entries ack);
+    void sendRPC(int sockfd, HEADER h, char *payload);
+    //void sendRPC(RaftNode* rNode, HEADER h, char *payload);
+    void sendRPC(ClientNode* me,  HEADER h, char *payload);
+    //void sendRPC(Raft* raft, RaftNode* rNode, HEADER h, append_entries_rpc* payload, entry groupEntry[], const uint szGroup);
+    int connect2raftnode(RaftNode* rNode);
+    //void startWorkerThread(Raft* raft, RaftNode* rNode, ClientNode* cNode, bool isClient, HEADER header);
+    //void requestLocationReceived(Raft* raft, ClientNode* cNode, uint size, uint sockfd);
+    //void unlock_and_setIndex(Raft *raft, const int nIndex);
+    //void responseAppendEntriesReceived(Raft* raft, RaftNode* rNode, uint size, uint sockfd);
+    int getLogSequenceNumber();
+
+    response_append_entries ackDequeue();
+    void ackEnqueue(response_append_entries ack);
 
 public:
-	Raft(char* configFileName);
-  
-  void lock() { _mtx.lock(); }
-  void unlock() { _mtx.unlock(); }
-  void lock_next_index() { _mtx_next_index.lock(); }
-  void unlock_next_index() { _mtx_next_index.unlock(); }
+    Raft(char* configFileName);
 
-	int incrementCommitCount();
+    void lock() { _mtx.lock(); }
+    void unlock() { _mtx.unlock(); }
+    void lock_next_index() { _mtx_next_index.lock(); }
+    void unlock_next_index() { _mtx_next_index.unlock(); }
 
-	void receiver();
-	void transmitter();
-	void resetTimeoutTime();
-	void cli();
+    int incrementCommitCount();
 
-	bool isTimeout();
-	microseconds getDuration();
-	void resetStartTime();
+    void receiver();
+    void transmitter();
+    void resetTimeoutTime();
+    void cli();
 
-	Config* getConfig();
-	Status* getStatus();
-	KVS* getKVS();
+    bool isTimeout();
+    microseconds getDuration();
+    void resetStartTime();
 
-	vector<RaftNode*>* getRaftNodes();
-	RaftNode* getRaftNodeById(int id);
-	RaftNode* getLeader();
+    Config* getConfig();
+    Status* getStatus();
+    KVS* getKVS();
 
-  vector<WorkerInfo*>* getWorkerInfo();
-  WorkerInfo* getWorkerInfoById(int id);
+    vector<RaftNode*>* getRaftNodes();
+    RaftNode* getRaftNodeById(int id);
+    RaftNode* getLeader();
 
-	int getLeaderId();
+    vector<WorkerInfo*>* getWorkerInfo();
+    WorkerInfo* getWorkerInfoById(int id);
 
-	vector<ClientNode*>* getClientNodes();
-	void addClientNode(ClientNode* cNode);
-	void delClientNode(ClientNode* cNode);
+    int getLeaderId();
 
-	void setMe(int me);
-	int getMe();
+    vector<ClientNode*>* getClientNodes();
+    void addClientNode(ClientNode* cNode);
+    void delClientNode(ClientNode* cNode);
 
-	int getLeaderTerm();
-	void setLeaderTerm(int leaderTerm);
+    void setMe(int me);
+    int getMe();
 
-	int getVoteElect();
-	void setVoteElect(int vote);
+    int getLeaderTerm();
+    void setLeaderTerm(int leaderTerm);
 
-	void apply(int index);
+    int getVoteElect();
+    void setVoteElect(int vote);
 
-	void sendAppendEntriesRPC(RaftNode* rNode, bool isHeartBeat);
-	void sendHeartBeat();
-	void sendLogEntry();
+    void apply(int index);
 
-	void enqueue(); // revise input argument
-	void dequeue(); // revise return value
-  
+    void sendAppendEntriesRPC(RaftNode* rNode, bool isHeartBeat);
+    void sendHeartBeat();
+    void sendLogEntry();
+
+    void enqueue(); // revise input argument
+    void dequeue(); // revise return value
+
 
 
 };

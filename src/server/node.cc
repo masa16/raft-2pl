@@ -22,50 +22,50 @@
 #include "functions.h"
 
 Node::Node(std::string* hostname, int listenPort) {
-	this->setHostname(*hostname);
-	this->setListenPort(listenPort);
+    this->setHostname(*hostname);
+    this->setListenPort(listenPort);
 }
 
 int Node::getID() {
-	return this->id;
+    return this->id;
 }
 void Node::setID(int id) {
-	this->id = id;
+    this->id = id;
 }
 
 bool
 Node::_send(char* message, int length) {
 /*
-	//cout << "send message to " << this->getHostname() << " [" << message << "] sock=" << sendSock << endl;
-	bool ok = true;
+    //cout << "send message to " << this->getHostname() << " [" << message << "] sock=" << sendSock << endl;
+    bool ok = true;
 
 //	_mtx.lock();
-	if (S_SEND(this->getSendSock(), message, length, 0) < 0) {
-		perror("write");
-		this->sendSock = -1;
-		std::cout << "   node is " << this->getHostname() << std::endl;
-		ok = false;
-	}
+    if (S_SEND(this->getSendSock(), message, length, 0) < 0) {
+        perror("write");
+        this->sendSock = -1;
+        std::cout << "   node is " << this->getHostname() << std::endl;
+        ok = false;
+    }
 //	_mtx.unlock();
 
-	return ok;
+    return ok;
 */
 }
 
 std::string Node::getHostname() {
-	return *this->hostname;
+    return *this->hostname;
 }
 
 void Node::setHostname(std::string hostname) {
-	this->hostname = new std::string(hostname);
+    this->hostname = new std::string(hostname);
 }
 
 int Node::getListenPort() {
-	return this->listenPort;
+    return this->listenPort;
 }
 
 void Node::setListenPort(int listenPort) {
-	this->listenPort = listenPort;
+    this->listenPort = listenPort;
 }
 /*
 pthread_t* Node::getWorker() {

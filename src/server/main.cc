@@ -32,42 +32,42 @@ using std::this_thread::sleep_for;
 using std::chrono::milliseconds;
 
 void signal_handler( int signal_num ) {
-	cout << "The interrupt signal is (" << signal_num << "). \n";
-	// terminate program
-	pthread_exit(NULL);
-} 
+    cout << "The interrupt signal is (" << signal_num << "). \n";
+    // terminate program
+    pthread_exit(NULL);
+}
 
 
 int
 main(int argc, char* argv[])
 {
-	if (argc < 2) {
-		cout << "Please specify a config file name." << endl;
-		return 0;
-	}
+    if (argc < 2) {
+        cout << "Please specify a config file name." << endl;
+        return 0;
+    }
 
-	// Do not stop if I receive SIGPIPE signal
-	signal(SIGPIPE, SIG_IGN);
+    // Do not stop if I receive SIGPIPE signal
+    signal(SIGPIPE, SIG_IGN);
 
-	printf("==================================\n");
-	printf("===                            ===\n");
-	printf("===            RAFT            ===\n");
-	printf("===                            ===\n");
-	printf("==================================\n");
-	
-	if (auto raft = std::make_shared<Raft>(argv[1])) {
-		auto receiveThread = thread([&raft]{ raft->receiver(); });
-		sleep_for(milliseconds(1000));
-		auto timerThread = thread([&raft]{ raft->transmitter(); });
-		
-		// Service thread
-		receiveThread.join();
+    printf("==================================\n");
+    printf("===                            ===\n");
+    printf("===            RAFT            ===\n");
+    printf("===                            ===\n");
+    printf("==================================\n");
 
-		// Continual monitoring thread
-		timerThread.join();
+    if (auto raft = std::make_shared<Raft>(argv[1])) {
+        auto receiveThread = thread([&raft]{ raft->receiver(); });
+        sleep_for(milliseconds(1000));
+        auto timerThread = thread([&raft]{ raft->transmitter(); });
 
-		//inputThread.join();
-	}
+        // Service thread
+        receiveThread.join();
 
-	return 0;
+        // Continual monitoring thread
+        timerThread.join();
+
+        //inputThread.join();
+    }
+
+    return 0;
 }

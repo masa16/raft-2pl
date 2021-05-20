@@ -25,51 +25,51 @@ using std::vector;
 
 class ClientNode : public Node {
 private:
-	int lastLogIndex;
-	int commitIndex;
+    int lastLogIndex;
+    int commitIndex;
 
-	mutex _mtx;
+    mutex _mtx;
 
-	int lastCommandId;
-	int committedCommandId; // 不要？
+    int lastCommandId;
+    int committedCommandId; // 不要？
 
-	bool needReadRequest;
-	int readRPCID;
-	vector<bool> readGrants;
+    bool needReadRequest;
+    int readRPCID;
+    vector<bool> readGrants;
 
-  int recvSock;
-  int sendSock;
+    int recvSock;
+    int sendSock;
 
 
 public:
-	ClientNode(std::string* hostname, int port);
+    ClientNode(std::string* hostname, int port);
 
-	int getLastLogIndex();
-	void setLastLogIndex(int lastIndex);
+    int getLastLogIndex();
+    void setLastLogIndex(int lastIndex);
 
-	int getCommitIndex();
-	void setCommitIndex(int commitIndex);
+    int getCommitIndex();
+    void setCommitIndex(int commitIndex);
 
-	int getLastCommandId();
-	void setLastCommandId(int lastCommandId);
+    int getLastCommandId();
+    void setLastCommandId(int lastCommandId);
 
-	int getCommittedCommandId();  
-	void setCommittedCommandId(int committedCommandId);
+    int getCommittedCommandId();
+    void setCommittedCommandId(int committedCommandId);
 
-	void setReadRPCID(int rpcid);
-	int getReadRPCID();
-	void setNeedReadRequest(bool b);
-	bool getNeedReadRequest();
-	int getReadGrantsNum(int size);
-	void grant(int raftNodeId);
-	void resetReadGrants(int size);
+    void setReadRPCID(int rpcid);
+    int getReadRPCID();
+    void setNeedReadRequest(bool b);
+    bool getNeedReadRequest();
+    int getReadGrantsNum(int size);
+    void grant(int raftNodeId);
+    void resetReadGrants(int size);
 
-	int getRecvSock();
-	int getSendSock();
-	void setRecvSock(int sock);
-	void setSendSock(int sock);
-	void closeSendSock();
-	void closeRecvSock();
+    int getRecvSock();
+    int getSendSock();
+    void setRecvSock(int sock);
+    void setSendSock(int sock);
+    void closeSendSock();
+    void closeRecvSock();
 
 };
 #endif

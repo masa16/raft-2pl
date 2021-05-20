@@ -18,17 +18,17 @@
 #ifndef RPC_KIND_H
 #define RPC_KIND_H
 enum RPCKind {
-	APPEND_ENTRIES             = 10,
-	REQUEST_VOTE               = 11,
-	RESPONSE_APPEND_ENTRIES    = 12,
-	RESPONSE_REQUEST_VOTE      = 13,
-	REQUEST_LOCATION           = 14,
-	RESPONSE_REQUEST_LOCATION  = 15,
-	CLIENT_COMMAND             = 16,
-	COMMIT_MESSAGE             = 17,
-	CLIENT_EXIT                = 18,
-	BYE_FROM_RAFT              = 19,
+    APPEND_ENTRIES             = 10,
+    REQUEST_VOTE               = 11,
+    RESPONSE_APPEND_ENTRIES    = 12,
+    RESPONSE_REQUEST_VOTE      = 13,
+    REQUEST_LOCATION           = 14,
+    RESPONSE_REQUEST_LOCATION  = 15,
+    CLIENT_COMMAND             = 16,
+    COMMIT_MESSAGE             = 17,
+    CLIENT_EXIT                = 18,
+    BYE_FROM_RAFT              = 19,
 
-  CONNECT_NOTIFIER           = 20,
+    CONNECT_NOTIFIER           = 20,
 };
 #endif

@@ -37,110 +37,110 @@ using std::to_string;
 uint
 Status::initVotedFor(string filename)
 {
-	int votedFor = -1;
+    int votedFor = -1;
 
-	// load the value
-	char buf[BUFSIZ];
-	FILE *fp = fopen(filename.c_str(), "r");
-	if (fgets(buf, sizeof(buf), fp)) {
-		votedFor = atoi(buf);
-	}
-	fclose(fp);
+    // load the value
+    char buf[BUFSIZ];
+    FILE *fp = fopen(filename.c_str(), "r");
+    if (fgets(buf, sizeof(buf), fp)) {
+        votedFor = atoi(buf);
+    }
+    fclose(fp);
 
-	return votedFor;
+    return votedFor;
 }
 
 uint
 Status::initCurrentTerm(string filename)
 {
-	/* 
-	 * currentTerm:
-	 *
-	 * latest term server has seen (initialized to 0
-	 * on first boot, increases monotonically)
-	 * votedFor candidateId that received vote in current
-	 */
-	int currentTerm = 0;
+    /*
+     * currentTerm:
+     *
+     * latest term server has seen (initialized to 0
+     * on first boot, increases monotonically)
+     * votedFor candidateId that received vote in current
+     */
+    int currentTerm = 0;
 
-	// load the value
-	char buf[BUFSIZ];
-	FILE *fp = fopen(filename.c_str(), "r");
-	if (fgets(buf, sizeof(buf), fp)) {
-		currentTerm = atoi(buf);
-	}
-	fclose(fp);
+    // load the value
+    char buf[BUFSIZ];
+    FILE *fp = fopen(filename.c_str(), "r");
+    if (fgets(buf, sizeof(buf), fp)) {
+        currentTerm = atoi(buf);
+    }
+    fclose(fp);
 
-	return currentTerm;
+    return currentTerm;
 }
 
 Status::Status(string storageDirectoryName)
 {
-	this->storageDirectoryName = new string(storageDirectoryName);
-	this->createDirectory();
-	//this->log = new Log(storageDirectoryName);
-	this->currentTerm = initCurrentTerm(storageDirectoryName + "currentTerm");
-	this->votedFor = initVotedFor(storageDirectoryName + "votedFor");
-	//this->commitIndex = -1;
-	//this->lastApplied = -1;
-	cout << this->currentTerm << endl;
-	cout << this->votedFor << endl;
+    this->storageDirectoryName = new string(storageDirectoryName);
+    this->createDirectory();
+    //this->log = new Log(storageDirectoryName);
+    this->currentTerm = initCurrentTerm(storageDirectoryName + "currentTerm");
+    this->votedFor = initVotedFor(storageDirectoryName + "votedFor");
+    //this->commitIndex = -1;
+    //this->lastApplied = -1;
+    cout << this->currentTerm << endl;
+    cout << this->votedFor << endl;
 }
 
 void Status::createDirectory() {
-	// crate the directory if it DOES NOT exist
-	struct stat st;
-	if (stat(this->getStorageDirectoryName().c_str(), &st) != 0) {
-		cout << "Creating the Directory \"" << this->getStorageDirectoryName() << "\"." << endl;
-		cout << "***";
-		int rc = mymkdir(this->getStorageDirectoryName().c_str());
-		if (rc == 0) {
-			cout << "Success!" << endl;
-		} else {
-			cout << "Failed" << endl;
-		}
-	} else {
-		cout << "The Directory \"" << this->getStorageDirectoryName() << "\" already exists." << endl;
-	}
+    // crate the directory if it DOES NOT exist
+    struct stat st;
+    if (stat(this->getStorageDirectoryName().c_str(), &st) != 0) {
+        cout << "Creating the Directory \"" << this->getStorageDirectoryName() << "\"." << endl;
+        cout << "***";
+        int rc = mymkdir(this->getStorageDirectoryName().c_str());
+        if (rc == 0) {
+            cout << "Success!" << endl;
+        } else {
+            cout << "Failed" << endl;
+        }
+    } else {
+        cout << "The Directory \"" << this->getStorageDirectoryName() << "\" already exists." << endl;
+    }
 }
 
 string Status::getStorageDirectoryName() {
-	return *this->storageDirectoryName;
+    return *this->storageDirectoryName;
 }
 
 /*
 Log* Status::getLog() {
-	return this->log;
+    return this->log;
 }
 */
 
 int Status::getVoteCount(const int index) {
-	assert(index >= 0);
-	//D((uint)this->votes.size());
+    assert(index >= 0);
+    //D((uint)this->votes.size());
 /*
-if (this->votes[index] > 2 ){
-for (auto& [key, value] : this->votes){
-cout << key << "," << value << " ";
-}
-cout << endl;
-}
+    if (this->votes[index] > 2 ){
+        for (auto& [key, value] : this->votes){
+            cout << key << "," << value << " ";
+        }
+        cout << endl;
+    }
 */
-	return this->votes[index];
+    return this->votes[index];
 }
 
 int Status::addVoteCount(const int index)
 {
-  int count = -1;
-	if (index < 0) D(index);
-	assert(index >= 0);
-	_mtx.lock();
-  if (this->votes.find(index) == this->votes.end()) {
-    this->votes[index] = 1;
-  } else {
-    this->votes[index]++;
-  }
-  count = this->votes[index];
-	_mtx.unlock();
-  return count;
+    int count = -1;
+    if (index < 0) D(index);
+    assert(index >= 0);
+    _mtx.lock();
+    if (this->votes.find(index) == this->votes.end()) {
+        this->votes[index] = 1;
+    } else {
+        this->votes[index]++;
+    }
+    count = this->votes[index];
+    _mtx.unlock();
+    return count;
 }
 
 /* void Status::addVoteCount(const int index) */
@@ -157,63 +157,63 @@ int Status::addVoteCount(const int index)
 /* } */
 
 State Status::getState() {
-	return this->state;
+    return this->state;
 }
 
 void Status::setState(State state) {
-	_mtx.lock();
-	this->state = state;
-	_mtx.unlock();
+    _mtx.lock();
+    this->state = state;
+    _mtx.unlock();
 }
 
 bool Status::isFollower() {
-	return this->state == FOLLOWER;
+    return this->state == FOLLOWER;
 }
 
 bool Status::isCandidate() {
-	return this->state == CANDIDATE;
+    return this->state == CANDIDATE;
 }
 
 bool Status::isLeader() {
-	return this->state == LEADER;
+    return this->state == LEADER;
 }
 
 void Status::becomeFollower() {
-	_mtx.lock();
-	this->state = FOLLOWER;
-	_mtx.unlock();
+    _mtx.lock();
+    this->state = FOLLOWER;
+    _mtx.unlock();
 }
 
 void Status::becomeCandidate() {
-	_mtx.lock();
-	this->state = CANDIDATE;
-	_mtx.unlock();
+    _mtx.lock();
+    this->state = CANDIDATE;
+    _mtx.unlock();
 }
 
 void Status::becomeLeader() {
-	_mtx.lock();
-	this->state = LEADER;
-	_mtx.unlock();
+    _mtx.lock();
+    this->state = LEADER;
+    _mtx.unlock();
 }
 
 int Status::getCurrentTerm() {
-	return this->currentTerm;
+    return this->currentTerm;
 }
 
 void Status::incrementCurrentTerm() {
-	this->currentTerm++;
+    this->currentTerm++;
 }
 
 int Status::getVotedFor() {
-	return this->votedFor;
+    return this->votedFor;
 }
 
 void Status::setVotedFor(int node_id) {
-	this->votedFor = node_id;
+    this->votedFor = node_id;
 }
 int Status::getTimeoutTime() {
-	return this->timeouttime;
+    return this->timeouttime;
 }
 void Status::setTimeoutTime(int timeouttime) {
-	this->timeouttime = timeouttime;
+    this->timeouttime = timeouttime;
 }

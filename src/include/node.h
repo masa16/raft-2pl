@@ -26,37 +26,36 @@
 class Node {
 private:
 
-	//std::mutex _mtx;
+    //std::mutex _mtx;
 
-	int id;
-	std::string* hostname;
-	int listenPort;
+    int id;
+    std::string* hostname;
+    int listenPort;
 
-	//int recvSock;
-	//int sendSock;
+    //int recvSock;
+    //int sendSock;
 
-	//pthread_t* worker;
+    //pthread_t* worker;
 
 public:
-	Node(std::string* hostname, int port);
+    Node(std::string* hostname, int port);
 
-	int getID();
-	void setID(int id);
+    int getID();
+    void setID(int id);
 
-	bool _send(char* message, int length);
+    bool _send(char* message, int length);
 
-	std::string getHostname();
-	void setHostname(std::string hostname);
+    std::string getHostname();
+    void setHostname(std::string hostname);
 
 
-	int getListenPort();
-	void setListenPort(int listenPort);
+    int getListenPort();
+    void setListenPort(int listenPort);
 
-  /*
-	pthread_t* getWorker();
-	void setWorker(pthread_t* worker);
-  */
+    /*
+    pthread_t* getWorker();
+    void setWorker(pthread_t* worker);
+    */
 };
 
 #endif
-

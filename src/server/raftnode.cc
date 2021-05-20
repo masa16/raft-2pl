@@ -22,31 +22,31 @@
 #include <cassert>
 
 RaftNode::RaftNode(std::string* hostname, int port) : Node(hostname, port) {
-	this->votedForMe = false;
-	this->rvrpcSent  = false;
-	this->isme       = false;
+    this->votedForMe = false;
+    this->rvrpcSent  = false;
+    this->isme       = false;
 }
 
 bool RaftNode::isMe() {
-	return this->isme;
+    return this->isme;
 }
 
 void RaftNode::setIsMe(bool isme) {
-	this->isme = isme;
+    this->isme = isme;
 }
 
 bool RaftNode::hasVotedForMe() {
-	return this->votedForMe;
+    return this->votedForMe;
 }
 
 void RaftNode::setVotedForMe(bool votedForMe) {
-	this->votedForMe = votedForMe;
+    this->votedForMe = votedForMe;
 }
 
 bool RaftNode::IhaveSentRequestVoteRPC() {
-	return this->rvrpcSent;
+    return this->rvrpcSent;
 }
 
 void RaftNode::setRequestVoteRPCSent(bool rvrpcSent) {
-	this->rvrpcSent = rvrpcSent;
+    this->rvrpcSent = rvrpcSent;
 }

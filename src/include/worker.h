@@ -33,46 +33,46 @@ using std::mutex;
 class Log;
 
 typedef struct _follower_info {
-	int followerNodeId;
-	int sockfd;
-	int nextIndex;
-	int sentIndex;
+    int followerNodeId;
+    int sockfd;
+    int nextIndex;
+    int sentIndex;
 } follower_info;
 
 typedef struct _task {
-	int workerId;
-	int lsn;             // log sequence number, required at committer
-	int nlog;
-	trans_req xactSet[MAX_GROUP_ENTRY]; // required at client
+    int workerId;
+    int lsn;             // log sequence number, required at committer
+    int nlog;
+    trans_req xactSet[MAX_GROUP_ENTRY]; // required at client
 } task;
 
 
 class WorkerInfo {
 private:
-	int workerId;
-	Log* log;
-	vector<follower_info*>* followers;
-	int commitIndex;        // -1  // committer 排他制御
-	int matchIndex;         // -1
-	int lastApplied;        // -1
-	mutex _mtx_xactQ;
-	mutex _mtx_taskList;
-	queue<trans_req> xactQ;
-	vector<task> taskList;
+    int workerId;
+    Log* log;
+    vector<follower_info*>* followers;
+    int commitIndex;        // -1  // committer 排他制御
+    int matchIndex;         // -1
+    int lastApplied;        // -1
+    mutex _mtx_xactQ;
+    mutex _mtx_taskList;
+    queue<trans_req> xactQ;
+    vector<task> taskList;
 public:
-	WorkerInfo(int workerId, vector<follower_info*> *followers);
-	int getWorkerId();
-	vector<follower_info*>* getFollowers();
-  follower_info* getFollowerInfoById(int rNodeId);
-	Log* getLog();
-	int getCommitIndex();
-  void setCommitIndex(int commitIndex);
-  int getNextIndex();
-  void setNextIndex(int nextIndex);
-	trans_req xactDequeue();
-	void xactEnqueue(trans_req t);
-	void taskStore(task t);
-	task taskLoad(const int lsn);
+    WorkerInfo(int workerId, vector<follower_info*> *followers);
+    int getWorkerId();
+    vector<follower_info*>* getFollowers();
+    follower_info* getFollowerInfoById(int rNodeId);
+    Log* getLog();
+    int getCommitIndex();
+    void setCommitIndex(int commitIndex);
+    int getNextIndex();
+    void setNextIndex(int nextIndex);
+    trans_req xactDequeue();
+    void xactEnqueue(trans_req t);
+    void taskStore(task t);
+    task taskLoad(const int lsn);
 };
 
 #endif

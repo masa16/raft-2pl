@@ -28,47 +28,47 @@
 using std::map;
 
 typedef struct _MEMO {
-	int index;
-	std::vector<int> lock_list;
-	int clientID;
+    int index;
+    std::vector<int> lock_list;
+    int clientID;
 } MEMO;
 
 typedef struct _HASH_OBJECT {
-	int key;
-	int value;
+    int key;
+    int value;
 } HASH_OBJECT;
 
 class KVS {
 private:
-	//LOCK_OBJECT _lkobj[WORKER_NUM];
-	HASH_OBJECT hash[SIZ_HASH_BUCKET];	
-	int key[SIZ_DATABASE];
-	int value[SIZ_DATABASE];
-	pthread_mutex_t _lock[SIZ_DATABASE];
-	std::list<MEMO> memo_index;
-	pthread_mutex_t _lock_memo_index;
-	
+    //LOCK_OBJECT _lkobj[WORKER_NUM];
+    HASH_OBJECT hash[SIZ_HASH_BUCKET];
+    int key[SIZ_DATABASE];
+    int value[SIZ_DATABASE];
+    pthread_mutex_t _lock[SIZ_DATABASE];
+    std::list<MEMO> memo_index;
+    pthread_mutex_t _lock_memo_index;
+
 public:
-	KVS();
+    KVS();
 
-	int size();
+    int size();
 
-	void printMemo(void);
-	bool lock(const int key);
-	void unlock(const int key);
-	void update(const int key, const int value);
-	void index_update(const int key, const int value);
-	int read(const int key);
-	int index_read(const int key);
-	
-	void setLockMemo(const int lastLogIndex, std::vector<int> lock_list, const int clientID);	
-	MEMO getLockMemo(const int index);
+    void printMemo(void);
+    bool lock(const int key);
+    void unlock(const int key);
+    void update(const int key, const int value);
+    void index_update(const int key, const int value);
+    int read(const int key);
+    int index_read(const int key);
 
-	void get(const char key[LEN_KEY], char value[LEN_VALUE]);
-	void put(const char key[LEN_KEY], const char value[LEN_VALUE]);
-	void del(const char key[LEN_KEY]);
+    void setLockMemo(const int lastLogIndex, std::vector<int> lock_list, const int clientID);
+    MEMO getLockMemo(const int index);
 
-	void printAll();
+    void get(const char key[LEN_KEY], char value[LEN_VALUE]);
+    void put(const char key[LEN_KEY], const char value[LEN_VALUE]);
+    void del(const char key[LEN_KEY]);
+
+    void printAll();
 };
 
 #endif //KVS_H

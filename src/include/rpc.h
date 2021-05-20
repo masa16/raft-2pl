@@ -49,65 +49,65 @@ class Raft;
 
 // append_entries_rpc
 typedef struct _append_entries_rpc {
-	RPCKind rpcKind;
-	int term;         // leader's term
-	int leaderId;
-	int prevLogIndex;
-	int prevLogTerm;
-	int leaderCommit; // leader's commitIndex
-	int lsn;
-	trans_req log[MAX_GROUP_ENTRY];
-	int szLog;
+    RPCKind rpcKind;
+    int term;         // leader's term
+    int leaderId;
+    int prevLogIndex;
+    int prevLogTerm;
+    int leaderCommit; // leader's commitIndex
+    int lsn;
+    trans_req log[MAX_GROUP_ENTRY];
+    int szLog;
 
-  int workerId;
-  int rNodeId;
-	/*
-		entry groupEntry[MAX_GROUP_ENTRY];
-		int szGroup; // used to redo at follower
-	*/
+    int workerId;
+    int rNodeId;
+    /*
+      entry groupEntry[MAX_GROUP_ENTRY];
+      int szGroup; // used to redo at follower
+    */
 } append_entries_rpc;
 
 // commit_message
 typedef struct _commit_message {
-	RPCKind rpcKind;
-	int commandId;
+    RPCKind rpcKind;
+    int commandId;
 } commit_message;
 
 // response_append_entries
 typedef struct _response_append_entries {
-	RPCKind rpcKind;
-	int term;
-	bool success;
-	uint lsn;
-  int workerId;
-  int rNodeId;
+    RPCKind rpcKind;
+    int term;
+    bool success;
+    uint lsn;
+    int workerId;
+    int rNodeId;
 } response_append_entries;
 
 // request_vote_rpc
 typedef struct _request_vote_rpc {
-	RPCKind rpcKind;
-	int term;         // candidate's term
-	int candidateId;
-	int lastLogIndex;
-	int lastLogTerm;
+    RPCKind rpcKind;
+    int term;         // candidate's term
+    int candidateId;
+    int lastLogIndex;
+    int lastLogTerm;
 } request_vote_rpc;
 
 typedef struct _response_request_vote {
-	RPCKind rpcKind;
-	int term;
-	bool success;
+    RPCKind rpcKind;
+    int term;
+    bool success;
 } response_request_vote;
 
 // request_location
 typedef struct _request_location {
-	RPCKind rpcKind;
+    RPCKind rpcKind;
 } request_location;
 
 // response_request_location
 typedef struct _response_request_location {
-	RPCKind rpcKind;
-	char hostname[LEN_HOST];
-	int port;
+    RPCKind rpcKind;
+    char hostname[LEN_HOST];
+    int port;
 } response_request_location;
 
 append_entries_rpc arpcByFields(int term,	int leaderId,	int prevLogIndex,	int prevLogTerm, int leaderCommit, trans_req log[MAX_GROUP_ENTRY], int szLog,int lsn, int workerId, int rNodeId);

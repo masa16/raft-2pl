@@ -21,35 +21,35 @@
 class RaftNode : public Node {
 private:
 //	int nextIndex;  // found in paper
-	//int matchIndex; // found in paper
-	//int sentIndex;  // sent to follower
-	bool isme;
-	bool votedForMe;
-	bool rvrpcSent;     // requestVoteRPC
+    //int matchIndex; // found in paper
+    //int sentIndex;  // sent to follower
+    bool isme;
+    bool votedForMe;
+    bool rvrpcSent;     // requestVoteRPC
 
 public:
-	RaftNode(std::string* hostname, int port);
+    RaftNode(std::string* hostname, int port);
 
-  /*
-	int  getNextIndex();
-	void setNextIndex(int nextIndex);
+    /*
+      int  getNextIndex();
+      void setNextIndex(int nextIndex);
 
-	int  getMatchIndex();
-	void setMatchIndex(int matchIndex);
+      int  getMatchIndex();
+      void setMatchIndex(int matchIndex);
 
-	int  getSentIndex();
-	void setSentIndex(int sentIndex);
-	void addSentIndex(int szGroup);
-  */
-	
-	bool isMe();
-	void setIsMe(bool isme);
+      int  getSentIndex();
+      void setSentIndex(int sentIndex);
+      void addSentIndex(int szGroup);
+    */
 
-	bool hasVotedForMe();
-	void setVotedForMe(bool votedForMe);
+    bool isMe();
+    void setIsMe(bool isme);
 
-	bool IhaveSentRequestVoteRPC();
-	void setRequestVoteRPCSent(bool rvrpcSent);
+    bool hasVotedForMe();
+    void setVotedForMe(bool votedForMe);
+
+    bool IhaveSentRequestVoteRPC();
+    void setRequestVoteRPCSent(bool rvrpcSent);
 };
 
 #endif

@@ -27,19 +27,19 @@ using std::string;
 
 class FileHandler {
 private:
-	string _fileName;
-	ifstream* _ifs;
-	ofstream* _ofs;
-	bool _append_mode;
+    string _fileName;
+    ifstream* _ifs;
+    ofstream* _ofs;
+    bool _append_mode;
 
 public:
-	FileHandler(string fileName);
+    FileHandler(string fileName);
 
-	ifstream* getIFStream();
-	ofstream* getOFStream(bool append_mode);
-	void closeIFStream();
-	void closeOFStream();
-	string getFileName();
+    ifstream* getIFStream();
+    ofstream* getOFStream(bool append_mode);
+    void closeIFStream();
+    void closeOFStream();
+    string getFileName();
 };
 
 #endif //FILEHANDLER_H

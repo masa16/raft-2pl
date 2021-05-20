@@ -23,30 +23,30 @@
 #include "constant.h"
 
 typedef struct _HEADER {
-	RPCKind kind;
-	uint size; // payload size
+    RPCKind kind;
+    uint size; // payload size
 } HEADER;
 
 // client_command
 typedef struct _client_request {
-	int from;
-	int to;
-	int diff; // size of money to be transferred
-	//int client_id;
-	int txId;
+    int from;
+    int to;
+    int diff; // size of money to be transferred
+    //int client_id;
+    int txId;
 } client_request;
 
 typedef struct _client_command {
-	RPCKind rpcKind;
-	int clientId;	
-	int commandId;
-	client_request req[MAX_CLI_REQ];
+    RPCKind rpcKind;
+    int clientId;
+    int commandId;
+    client_request req[MAX_CLI_REQ];
 } client_command;
 
 typedef struct _trans_req{
- 	int clientId;
-	int commandId;
-	client_request req;
+    int clientId;
+    int commandId;
+    client_request req;
 } trans_req;
 
 

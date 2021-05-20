@@ -12,7 +12,7 @@
 
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see http://www.gnu.org/licenses/.
-*/
+ */
 
 
 
@@ -33,43 +33,43 @@ using std::ios;
 
 
 FileHandler::FileHandler(string fileName) {
-	this->_fileName = fileName;
-	this->_ifs = NULL;
-	this->_ofs = NULL;
+    this->_fileName = fileName;
+    this->_ifs = NULL;
+    this->_ofs = NULL;
 }
 
 ifstream* FileHandler::getIFStream() {
-	this->_ifs = new ifstream(this->getFileName().c_str());
-	return this->_ifs;
+    this->_ifs = new ifstream(this->getFileName().c_str());
+    return this->_ifs;
 }
 
 ofstream* FileHandler::getOFStream(bool append_mode) {
-	if (!this->_ofs || this->_append_mode != append_mode) {
-		if (this->_ofs) {
-			this->closeOFStream();
-		}
-		if (append_mode) {
-			this->_ofs = new ofstream(this->getFileName().c_str(), ios::app);
-		} else {
-			this->_ofs = new ofstream(this->getFileName().c_str());
-		}
-	}
-	this->_append_mode = append_mode;
+    if (!this->_ofs || this->_append_mode != append_mode) {
+        if (this->_ofs) {
+            this->closeOFStream();
+        }
+        if (append_mode) {
+            this->_ofs = new ofstream(this->getFileName().c_str(), ios::app);
+        } else {
+            this->_ofs = new ofstream(this->getFileName().c_str());
+        }
+    }
+    this->_append_mode = append_mode;
 
-	return this->_ofs;
+    return this->_ofs;
 }
 
 void FileHandler::closeIFStream()
 {
-	this->_ifs->close();
+    this->_ifs->close();
 }
 
 void FileHandler::closeOFStream()
 {
-	this->_ofs->close();
+    this->_ofs->close();
 }
 
 string FileHandler::getFileName()
 {
-	return this->_fileName;
+    return this->_fileName;
 }

@@ -20,12 +20,12 @@
 #define ENTRY_H
 
 typedef struct _entry {
-	int lsn;
-	int term;
-	int nlog;
-	struct timeval time;
-	//client_command cc;
-	trans_req xactSet[MAX_GROUP_ENTRY];
+  int lsn;
+  int term;
+  int nlog;
+  struct timeval time;
+  //client_command cc;
+  trans_req xactSet[MAX_GROUP_ENTRY];
 } entry;
 
 #endif

@@ -35,115 +35,115 @@ using std::endl;
 Log::Log(string dirname, int workerId) : FileHandler(dirname + "log-" + std::to_string(workerId))
 {
 
-	cout << "The Log file is \"" << this->getFileName() << "\"." << endl;
+    cout << "The Log file is \"" << this->getFileName() << "\"." << endl;
 
-	this->fd = open((this->getFileName()).c_str(), O_RDONLY);	if (fd == -1) ERR;
-	while (true) {
-		entry e;
-		int n = read(this->fd, &e, sizeof(entry)); if (n == -1) ERR;
-		if (n == 0) break; 
-		this->_entry.push_back(e);
-	}
-	close(this->fd);
-	this->lastSyncedIndex = this->lastLogIndex();
-	this->fd = open(this->getFileName().c_str(), O_WRONLY|O_APPEND);
+    this->fd = open((this->getFileName()).c_str(), O_RDONLY);	if (fd == -1) ERR;
+    while (true) {
+        entry e;
+        int n = read(this->fd, &e, sizeof(entry)); if (n == -1) ERR;
+        if (n == 0) break;
+        this->_entry.push_back(e);
+    }
+    close(this->fd);
+    this->lastSyncedIndex = this->lastLogIndex();
+    this->fd = open(this->getFileName().c_str(), O_WRONLY|O_APPEND);
 }
 
 Log::~Log()
 {
-	int ret = close(fd); if (ret<0)ERR;
+    int ret = close(fd); if (ret<0)ERR;
 }
 
 void Log::lockEntry() {
-	_mutexEntry.lock();
+    _mutexEntry.lock();
 }
 
 void Log::unlockEntry() {
-	_mutexEntry.unlock();
+    _mutexEntry.unlock();
 }
 
 int Log::getSizeEntry() {
-	int ret;
+    int ret;
 
-	this->lockEntry();
-	ret = this->_entry.size();
-	this->unlockEntry();
+    this->lockEntry();
+    ret = this->_entry.size();
+    this->unlockEntry();
 
-	return ret;
+    return ret;
 }
 
 int Log::getMaxIndexOfEntry()
 {
-	int ret;
+    int ret;
 
-	ret = this->_entry.size() - 1;
+    ret = this->_entry.size() - 1;
 
-	return ret;
+    return ret;
 }
 
 int Log::lastLogIndex() {
-	return this->_entry.size() - 1;
+    return this->_entry.size() - 1;
 }
 
 int Log::lastLogTerm() {
-	return this->getTerm(this->lastLogIndex());
+    return this->getTerm(this->lastLogIndex());
 }
 
 int Log::getTerm(int index) {
-	if (index < 0)
-		return -1;
+    if (index < 0)
+        return -1;
 
-	if (index > this->lastLogIndex())
-		return -1;
+    if (index > this->lastLogIndex())
+        return -1;
 
-	entry e = this->getEntry(index);
-	return e.term;	
+    entry e = this->getEntry(index);
+    return e.term;
 }
 
 bool Log::match(int prevLogIndex, int prevTerm)
 {
-	if (prevLogIndex < 0)
-		return true;
-	if (prevTerm == this->getTerm(prevLogIndex))
-		return true;
+    if (prevLogIndex < 0)
+        return true;
+    if (prevTerm == this->getTerm(prevLogIndex))
+        return true;
 
-	return false;
+    return false;
 }
 
 int Log::getPrevTerm(int prevLogIndex)
 {
-	int prevTerm;
+    int prevTerm;
 
-	if (prevLogIndex == -1)
-		prevTerm = -1;
-	else {
-		entry e = this->getEntry(prevLogIndex);
-		prevTerm = e.term;
-	}
-	
-	return prevTerm;
+    if (prevLogIndex == -1)
+        prevTerm = -1;
+    else {
+        entry e = this->getEntry(prevLogIndex);
+        prevTerm = e.term;
+    }
+
+    return prevTerm;
 }
 
 entry Log::getEntry(int index)
 {
-	entry e = this->_entry[index];
-	return e;
+    entry e = this->_entry[index];
+    return e;
 }
 
 // Original code
 void Log::addEntry(entry e)
 {
-	// Memory
-	this->_entry.push_back(e);
-	// Storage
-	int ret;
-	ret = write(this->fd, &e, sizeof(entry)); if (ret<0)ERR;
-	ret = fsync(this->fd); if (ret<0)ERR;
+    // Memory
+    this->_entry.push_back(e);
+    // Storage
+    int ret;
+    ret = write(this->fd, &e, sizeof(entry)); if (ret<0)ERR;
+    ret = fsync(this->fd); if (ret<0)ERR;
 }
 
 
 int Log::getLastSyncedIndex() {
-	return this->lastSyncedIndex;
+    return this->lastSyncedIndex;
 }
 
 /*
@@ -157,7 +157,7 @@ void Log::addCommand(const client_command cc) {
 /*
 void Log::sync()
 {
-	int fd = open(this->getFileName().c_str(), O_WRONLY|O_APPEND);	
+	int fd = open(this->getFileName().c_str(), O_WRONLY|O_APPEND);
 	int lastIndex = this->lastLogIndex();
 	for (int i = this->getLastSyncedIndex() + 1; i <= lastIndex; i++) {
 		tries_rpc arpc = this->get(i);
@@ -168,4 +168,3 @@ void Log::sync()
 	this->lastSyncedIndex = lastIndex;
 }
 */
-

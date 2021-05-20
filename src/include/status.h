@@ -31,71 +31,71 @@ using std::map;
 //class Log;
 
 enum State {
-	FOLLOWER  = 0,
-	CANDIDATE = 1,
-	LEADER    = 2,
+    FOLLOWER  = 0,
+    CANDIDATE = 1,
+    LEADER    = 2,
 };
 
 
 class Status {
 private:
-	std::mutex _mtx;
+    std::mutex _mtx;
 
-	string* storageDirectoryName;
-	//Log* log;
-  //vector<int> votes;
-  map<int, int> votes; 
+    string* storageDirectoryName;
+    //Log* log;
+    //vector<int> votes;
+    map<int, int> votes;
 
-	State state;
+    State state;
 
-	//	ValueStored* currentTerm; 
-	//ValueStored* votedFor;
-	// Latest term server has seen (initialized to 0 on first boot, increases monotonically)
-	int currentTerm; // Latest term server has seen (initialized to 0 on first boot, increases monotonically)
-	int votedFor;  // CandidateId that received vote in current term (or null if none)
+    //	ValueStored* currentTerm;
+    //ValueStored* votedFor;
+    // Latest term server has seen (initialized to 0 on first boot, increases monotonically)
+    int currentTerm; // Latest term server has seen (initialized to 0 on first boot, increases monotonically)
+    int votedFor;  // CandidateId that received vote in current term (or null if none)
 
-	//  vector<uint> commitIndex;
-	//int commitIndex;
-	//int lastApplied;
-  //
-	int timeouttime;
-	void createDirectory();
+    //  vector<uint> commitIndex;
+    //int commitIndex;
+    //int lastApplied;
+    //
+    int timeouttime;
+    void createDirectory();
 
 public:
-	Status(string storageDirectoryName);
+    Status(string storageDirectoryName);
 
-	string getStorageDirectoryName();
+    string getStorageDirectoryName();
 
-	uint initCurrentTerm(string filename);
-	uint initVotedFor(string filename);
-		
-	//Log* getLog();
-	int getVoteCount(const int index);
-	//void addVoteCount(const int index);
-  int addVoteCount(const int index);
+    uint initCurrentTerm(string filename);
+    uint initVotedFor(string filename);
 
-	State getState();
-	void  setState(State state);
-	bool isFollower();
-	bool isCandidate();
-	bool isLeader();
-	void becomeFollower();
-	void becomeCandidate();
-	void becomeLeader();
+    //Log* getLog();
+    int getVoteCount(const int index);
+    //void addVoteCount(const int index);
+    int addVoteCount(const int index);
 
-	int  getCurrentTerm();
-	void incrementCurrentTerm();
+    State getState();
+    void  setState(State state);
+    bool isFollower();
+    bool isCandidate();
+    bool isLeader();
+    void becomeFollower();
+    void becomeCandidate();
+    void becomeLeader();
 
-	int  getVotedFor();
-	void setVotedFor(int node_id);
+    int  getCurrentTerm();
+    void incrementCurrentTerm();
 
-	//int  getCommitIndex();
-	//void setCommitIndex(int commitIndex);
+    int  getVotedFor();
+    void setVotedFor(int node_id);
 
-	//int  getLastApplied(int lastApplied);
+    //int  getCommitIndex();
+    //void setCommitIndex(int commitIndex);
 
-	int  getTimeoutTime();
-	void setTimeoutTime(int timeouttime);
+    //int  getLastApplied(int lastApplied);
+
+    int  getTimeoutTime();
+    void setTimeoutTime(int timeouttime);
 };
 
 //#include "status.cc"
