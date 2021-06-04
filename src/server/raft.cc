@@ -536,6 +536,7 @@ void Raft::transmitter() // or timer
     }
     while(true){
         // transmitter
+        sleep(60);
     }
 }
 
@@ -748,7 +749,7 @@ int Raft::connect2raftnode(RaftNode* rNode) {
 #endif // ENABLE_RSOCKET
 
     // connect to the server
-    if (S_CONNECT(fd, S_DST_ADDR(ai), S_DST_ADDRLEN(ai)) == -1) ERR;
+    while (S_CONNECT(fd, S_DST_ADDR(ai), S_DST_ADDRLEN(ai)) == -1) sleep(1);
     //else rNode->setSendSock(fd);
     S_FREEADDRINFO(ai);
     return fd;
