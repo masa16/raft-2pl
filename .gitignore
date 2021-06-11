@@ -1,2 +1,9 @@
-*.o *~
+*.o
+*~
 .DS_Store
+core
+TAGS
+src/client/client
+src/client/createInput
+src/server/raft
+src/server/raft-follower

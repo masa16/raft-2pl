@@ -46,7 +46,8 @@ printRPC(uint line, RPCKind kind)
 {
     printf("line=%d\t", line);
     switch (kind) {
-    case APPEND_ENTRIES:	cout << "APPEND_ENTRIES" << endl; break;
+    case NOTIFY_PORT: cout << "NOTIFY_PORT" << endl; break;
+    case APPEND_ENTRIES: cout << "APPEND_ENTRIES" << endl; break;
     case REQUEST_VOTE:   cout << "REQUEST_VOTE"   << endl; break;
     case RESPONSE_APPEND_ENTRIES: cout << "RESPONSE_APPEND_ENTRIES" << endl; break;
     case RESPONSE_REQUEST_VOTE: cout << "RESPONSE_REQUEST_VOTE" << endl; break;

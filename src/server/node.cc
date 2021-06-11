@@ -67,6 +67,7 @@ int Node::getListenPort() {
 void Node::setListenPort(int listenPort) {
     this->listenPort = listenPort;
 }
+
 /*
 pthread_t* Node::getWorker() {
 	return this->worker;

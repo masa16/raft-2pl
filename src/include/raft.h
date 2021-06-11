@@ -171,7 +171,7 @@ private:
     void ackEnqueue(response_append_entries ack);
 
 public:
-    Raft(char* configFileName);
+    Raft(char* configFileName, int me=-1);
 
     void lock() { _mtx.lock(); }
     void unlock() { _mtx.unlock(); }

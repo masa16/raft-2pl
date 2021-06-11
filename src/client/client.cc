@@ -72,7 +72,7 @@ void sendRPC(int sockfd, HEADER h, char *payload)
     char *p = (char *)malloc(sz);
     memcpy(p, &h, sizeof(h));
     memcpy(p + sizeof(h), payload, h.size);
-    if (S_SEND(sockfd, p, sz, 0) < 0) ERR;
+    if (S_SEND(sockfd, p, sz, 0) < sz) ERR;
     free(p);
 }
 
@@ -117,7 +117,7 @@ int conn(char* hostname, int port) {
 void print_vec_cc(vector<client_command> vec_cc)
 {
     for (auto itr = vec_cc.begin(); itr != vec_cc.end(); itr++) {
-        //printf("%d %d\n", itr->rpcKind, itr->commandId);
+        printf("rpcKindw:%d commandId:%d\n", itr->rpcKind, itr->commandId);
         for (int i = 0; i < MAX_CLI_REQ; i++) {
             printf("%d %d %d\n", itr->req[i].from, itr->req[i].to, itr->req[i].diff);
         }
@@ -150,12 +150,12 @@ main(int argc, char* argv[])
         sockfd = conn(host.hostname, host.port);
         assert(h.kind == REQUEST_LOCATION);
         sendRPC(sockfd, h, (char *)&rl);
-        if (S_RECV(sockfd, &h, sizeof(HEADER), MSG_WAITALL) < 0) ERR;
-        if (S_RECV(sockfd, &rrl, sizeof(response_request_location), MSG_WAITALL) < 0) ERR;
+        if (S_RECV(sockfd, &h, sizeof(HEADER), MSG_WAITALL) < (ssize_t)sizeof(HEADER)) ERR;
+        if (S_RECV(sockfd, &rrl, sizeof(response_request_location), MSG_WAITALL) < (ssize_t)sizeof(response_request_location)) ERR;
         S(host.hostname);
         S(rrl.hostname);
-        if (strcmp(host.hostname, rrl.hostname) == 0) break; // ok. connected.
-        else {strcpy(host.hostname, rrl.hostname); close(sockfd);}
+        if (strcmp(host.hostname, rrl.hostname) == 0 && (int)host.port == rrl.port) break; // ok. connected.
+        else {strcpy(host.hostname, rrl.hostname); host.port = rrl.port; close(sockfd);}
     }
 
     // start measurement
@@ -165,6 +165,7 @@ main(int argc, char* argv[])
     int commandId = 0;
     HEADER h;
     for (auto itr = vec_cc.begin(); itr != vec_cc.end(); itr++) {
+        N;
         h.size = sizeof(client_command); h.kind = CLIENT_COMMAND;
         client_command cc = *itr;
 
@@ -178,8 +179,8 @@ main(int argc, char* argv[])
 
         while (true) {
             commit_message cm;
-            if (S_RECV(sockfd, &h, sizeof(HEADER), MSG_WAITALL) < 0) ERR;
-            if (S_RECV(sockfd, &cm, sizeof(cm), MSG_WAITALL) < 0) ERR;
+            if (S_RECV(sockfd, &h, sizeof(HEADER), MSG_WAITALL) < (ssize_t)sizeof(HEADER)) ERR; //teishi point
+            if (S_RECV(sockfd, &cm, sizeof(cm), MSG_WAITALL) < (ssize_t)sizeof(cm)) ERR;
             if (cm.commandId == commandId) {
                 commitCount++;
                 request_end = std::chrono::system_clock::now();
@@ -207,7 +208,7 @@ main(int argc, char* argv[])
     h.size = sizeof(HEADER);
 
     sendRPC(sockfd, h, (char *)&h); // header and payload are same :-)
-    if (S_RECV(sockfd, &h, sizeof(h) + sizeof(h), MSG_WAITALL) < 0) ERR;
+    if (S_RECV(sockfd, &h, sizeof(h) + sizeof(h), MSG_WAITALL) < (ssize_t)(sizeof(h) + sizeof(h))) ERR;
     int ret = S_CLOSE(sockfd); if (ret < 0) ERR;
     return 0;
 }

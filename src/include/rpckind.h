@@ -18,6 +18,8 @@
 #ifndef RPC_KIND_H
 #define RPC_KIND_H
 enum RPCKind {
+    NONE                       = 0,
+    NOTIFY_PORT                = 1,
     APPEND_ENTRIES             = 10,
     REQUEST_VOTE               = 11,
     RESPONSE_APPEND_ENTRIES    = 12,

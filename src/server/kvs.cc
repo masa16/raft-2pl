@@ -19,6 +19,8 @@
 
 #include <assert.h>
 #include <unistd.h>
+#include <ostream>
+#include <iostream>
 
 KVS::KVS() {
     for (int i = 0; i < SIZ_DATABASE; i++) {
@@ -222,11 +224,9 @@ void KVS::del(const char key[LEN_KEY]) {
 }
 
 void KVS::printAll() {
-    /*
-    cout << "---kvs---\n";
-    for (auto x : this->mp) {
-        cout << x.first << " => " << x.second << endl;
+    std::cout << "---kvs---\n";
+    for (int i = 0; i < SIZ_DATABASE; i++) {
+        std::cout << key[i] << " => " << value[i] << std::endl;
     }
-    cout << "---kvs end---\n";
-    */
+    std::cout << "---kvs end---\n";
 }

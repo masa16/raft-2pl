@@ -55,7 +55,13 @@ main(int argc, char* argv[])
     printf("===                            ===\n");
     printf("==================================\n");
 
-    if (auto raft = std::make_shared<Raft>(argv[1])) {
+    std::shared_ptr<Raft> raft;
+    if (argc==3) {
+        raft = std::make_shared<Raft>(argv[1],atoi(argv[2]));
+    } else {
+        raft = std::make_shared<Raft>(argv[1]);
+    }
+    if (raft) {
         auto receiveThread = thread([&raft]{ raft->receiver(); });
         sleep_for(milliseconds(1000));
         auto timerThread = thread([&raft]{ raft->transmitter(); });

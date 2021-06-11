@@ -22,7 +22,8 @@
 
 int group_size[MAX_GROUP_ENTRY+1] = {0};
 
-Raft::Raft(char* configFileName) {
+Raft::Raft(char* configFileName, int me) {
+    this->me = me;
     this->config = new Config(configFileName);
     this->raftNodes = new vector<RaftNode*>;
     this->clientNodes = new vector<ClientNode*>;
@@ -88,12 +89,21 @@ void Raft::receiver()
 
     while (true) {
 
-        int accept_fd = S_ACCEPT(fd, (sockaddr*)&c_addr, &len); if (accept_fd == -1) ERR;
+        int port = 0;
+        int accept_fd = S_ACCEPT(fd, (sockaddr*)&c_addr, &len); if (accept_fd == -1) ERR; //thread 2 teishi point
+        D(accept_fd);
 
-        if (S_RECV(accept_fd, &header, sizeof(HEADER), MSG_WAITALL) < 0) ERR;
-        //printRPC(__LINE__, header.kind);
+    retry:
+        if (S_RECV(accept_fd, &header, sizeof(HEADER), MSG_WAITALL) < (ssize_t)sizeof(HEADER)) ERR;
+        printRPC(__LINE__, header.kind);
+        if (header.kind == NOTIFY_PORT) {
+            port = header.size;
+            D(port);
+            goto retry;
+        } else
         // Leader
         if (header.kind == REQUEST_LOCATION || header.kind == CLIENT_COMMAND) {
+            //fprintf(stderr,"leader\n");
             assert(header.kind == REQUEST_LOCATION);
             string hostname(inet_ntoa(c_addr.sin_addr));
             ClientNode *cNode = new ClientNode(&hostname, (int)ntohs(c_addr.sin_port));
@@ -101,14 +111,14 @@ void Raft::receiver()
             cNode->setSendSock(accept_fd);
             cNode->setID(this->getClientNodes()->size());
             this->addClientNode(cNode);
-            //cout << __LINE__ << " " << cNode->getHostname() << " connected(Client Node). (sock=" << accept_fd << ")\n";
+            cout << __LINE__ << " " << cNode->getHostname() << " connected(Client Node). (sock=" << accept_fd << ")\n";
 
 
             thread producerThread(&Raft::producer, this, accept_fd, header, cNode, workerId);
             producerThread.detach();
 
             // round robin
-            if(workerId == this->workerInfos->size()-1){
+            if(workerId == (ssize_t)this->workerInfos->size()-1){
                 workerId = 0;
             } else {
                 workerId++;
@@ -117,30 +127,37 @@ void Raft::receiver()
             // Follower
         } else if (header.kind == REQUEST_VOTE){
             for (RaftNode* rNode : *this->getRaftNodes()) {
-                if (!rNode->isMe() && inet_ntoa(c_addr.sin_addr) == rNode->getHostname()) {
-                    cout << rNode->getHostname() << " connected(Notifier thread). (sock=" << accept_fd << ")\n";
-                    S_RECV(accept_fd, NULL, header.size, MSG_WAITALL);
+                D(rNode->getID());
+                if (!rNode->isMe() && inet_ntoa(c_addr.sin_addr) == rNode->getHostname() && port == rNode->getListenPort()) {
+                    cout << rNode->getHostname() << " connected(RESUEST_VOTE). (sock=" << accept_fd << ")\n";
+                    ssize_t recv_ret = S_RECV(accept_fd, NULL, header.size, MSG_WAITALL);
+                    L(recv_ret); D(rNode->getID());
                     this->status->setVotedFor(rNode->getID());
+                    break;
                 }
             }
         } else if (header.kind == RESPONSE_APPEND_ENTRIES) {
-
             for (RaftNode* rNode : *this->getRaftNodes()) {
-                if (!rNode->isMe() && inet_ntoa(c_addr.sin_addr) == rNode->getHostname()) {
+                D(rNode->getID());
+                if (!rNode->isMe() && inet_ntoa(c_addr.sin_addr) == rNode->getHostname() && port == rNode->getListenPort()) {
                     cout << rNode->getHostname() << " connected(Notifier thread). (sock=" << accept_fd << ")\n";
                     thread notifierThread(&Raft::notifier, this, accept_fd, rNode->getID(), header);
                     notifierThread.detach();
+                    break;
                 }
             }
 
             // Follower
         } else if (header.kind == APPEND_ENTRIES){
+            D(ntohs(c_addr.sin_port));
             for (RaftNode* rNode : *this->getRaftNodes()) {
-                if (!rNode->isMe() && inet_ntoa(c_addr.sin_addr) == rNode->getHostname()) {
-                    cout << rNode->getHostname() << " connected(aorker thread). (sock=" << accept_fd << ")\n";
+                D(rNode->getID()); D(rNode->getListenPort());
+                if (!rNode->isMe() && inet_ntoa(c_addr.sin_addr) == rNode->getHostname() && port == rNode->getListenPort()) {
+                    cout << rNode->getHostname() << " connected(worker thread). (sock=" << accept_fd << ")\n";
                     // create log receiver thread
                     thread logReceiverThread(&Raft::logReceiver, this, accept_fd, header);  //accept_argsのような構造体が必要？
                     logReceiverThread.detach();
+                    break;
                 }
             }
         }
@@ -155,7 +172,7 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
      * ackをackQueueにつめる
      * receiverスレッドとは異なるPortで待ち受ける？
      */
-    uint logIndex;
+    //uint logIndex;
     char buf[sizeof(response_append_entries)];
     response_append_entries ack;
 
@@ -165,12 +182,12 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
 
     // 最初のackのheaderはすでにreceiverで読まれているのでここでは読まない
     if(header.kind == RESPONSE_APPEND_ENTRIES){
-        if (S_RECV(sockfd, buf, header.size, MSG_WAITALL) < 0) ERR;
+        if (S_RECV(sockfd, buf, header.size, MSG_WAITALL) < header.size) ERR; //thread 15,17 teishi point
         memcpy(&ack, buf, sizeof(response_append_entries));
     }
 
 
-    while(true){
+    while(true){ printRPC(__LINE__,header.kind);
         if(header.kind == RESPONSE_APPEND_ENTRIES){
             WorkerInfo* workerInfo = this->getWorkerInfoById(ack.workerId);
             follower_info* fi = workerInfo->getFollowerInfoById(ack.rNodeId);
@@ -178,7 +195,7 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
             if (ack.success) {
                 if (status->addVoteCount(ack.lsn) > (clusterSize/2)) {
                     task t = workerInfo->taskLoad(ack.lsn);
-
+                    D(t.nlog);
                     if (t.lsn != -1) { // 既にタスクがロード済であれば-1
                         for(int i=0; i < t.nlog; i++){
                             trans_req xact;
@@ -188,13 +205,13 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
                             int toKey = xact.req.to;
                             int diffVal = xact.req.diff;
 
-		            int fromVal = kvs->index_read(fromKey);
-		            int toVal = kvs->index_read(toKey);
+                            int fromVal = kvs->index_read(fromKey);
+                            int toVal = kvs->index_read(toKey);
                             fromVal -= diffVal;
                             toVal += diffVal;
 
-		            kvs->index_update(fromKey, fromVal);
-		            kvs->index_update(toKey, toVal);
+                            kvs->index_update(fromKey, fromVal);
+                            kvs->index_update(toKey, toVal);
 
                             //unlock
                             kvs->unlock(fromKey);
@@ -203,9 +220,9 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
                             workerInfo->setCommitIndex(nextIndex);
                             for (ClientNode* cNode : *this->getClientNodes()) {
                                 if (cNode->getID() == xact.clientId) {
-		  	            HEADER h; h.size = sizeof(commit_message); h.kind = COMMIT_MESSAGE;
-		  	            commit_message cm = cmByFields(xact.commandId);
-		  	            this->sendRPC(cNode, h, (char *)&cm);
+                                    HEADER h; h.size = sizeof(commit_message); h.kind = COMMIT_MESSAGE;
+                                    commit_message cm = cmByFields(xact.commandId);
+                                    this->sendRPC(cNode, h, (char *)&cm);
                                     break;
                                 }
                             }
@@ -213,10 +230,10 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
                     }
                 }
             }
-  	}
+        }
         // 次のackを待ち受け
-        if (S_RECV(sockfd, &header, sizeof(HEADER), MSG_WAITALL) < 0) ERR;
-        if (S_RECV(sockfd, buf, header.size, MSG_WAITALL) < 0) ERR;
+        if (S_RECV(sockfd, &header, sizeof(HEADER), MSG_WAITALL) < (ssize_t)sizeof(HEADER)) ERR; //thread 14,16 teishi point
+        if (S_RECV(sockfd, buf, header.size, MSG_WAITALL) < header.size) ERR; //thread 15 teishi point
         memcpy(&ack, buf, sizeof(response_append_entries));
     }
 }
@@ -255,7 +272,7 @@ timeOut(struct timeval prev)
 
 
 void Raft::worker(WorkerInfo* workerInfo) {
-    N;
+    //N;
 
     int buffid;
     trans_req logBuffer[MAX_GROUP_ENTRY];
@@ -263,6 +280,7 @@ void Raft::worker(WorkerInfo* workerInfo) {
     Log *log = workerInfo->getLog();
     struct timeval preLogSend;
     log = new Log(this->getConfig()->getStorageDirectoryName(), workerId);
+    D(workerId);
 
     //int matchIndex; // found in paper
 
@@ -275,10 +293,9 @@ void Raft::worker(WorkerInfo* workerInfo) {
 
         // TxQueueからTxを取り出す
         if (canDoXactDeq == true) {
-            xact = workerInfo->xactDequeue();
+            xact = workerInfo->xactDequeue(); //thread 5,6,7,8,9,10,11,12 teishi point
         }
         if (xact.clientId != -1) { // Xact exists!
-
             assert(xact.req.from != xact.req.to);
 
             // sort
@@ -289,8 +306,9 @@ void Raft::worker(WorkerInfo* workerInfo) {
                 xact.req.to = tmp;
             }
 
-            if (kvs->lock(xact.req.from) == true) {
+            if (kvs->lock(xact.req.from) == true) { //thread 4 teishi point
                 if (kvs->lock(xact.req.to) == true) {
+                    //D(buffid);
                     // Insert to local log buffer
                     memcpy(&logBuffer[buffid], &xact, sizeof(trans_req));
                     canDoXactDeq = true;
@@ -310,6 +328,7 @@ void Raft::worker(WorkerInfo* workerInfo) {
 
             entry e;
             int lsn = getLogSequenceNumber(); // lsn == global-log-index
+            D(lsn);
             // uint
             assert(lsn>=0);
 
@@ -342,9 +361,12 @@ void Raft::worker(WorkerInfo* workerInfo) {
                     for (RaftNode* rNode : *this->getRaftNodes()) {
                         if (!rNode->isMe() && rNode->getID() == fi->followerNodeId) {
                             fi->sockfd =  this->connect2raftnode(rNode);
+                            D(fi->followerNodeId); D(fi->sockfd);
+                            break;
                         }
                     }
                 }
+                D(nlog); D(lsn); D(curTerm);
                 sendRPC(fi->sockfd, h, (char*)&packet);
                 preLogSend = setLogSend();
             }
@@ -356,7 +378,6 @@ void Raft::worker(WorkerInfo* workerInfo) {
             t.nlog = nlog;
             t.workerId = workerId;
             workerInfo->taskStore(t);
-
 
         }
     }
@@ -374,7 +395,7 @@ void Raft::logReceiver(int sockfd, HEADER header){
      * 自分のログにLogGrpを書き込む
      * クライアントに応答を返す
      */
-    N;
+    D(sockfd);
     append_entries_rpc arpc;
     Status* status = this->getStatus();
     int curTerm = status->getCurrentTerm();
@@ -385,7 +406,7 @@ void Raft::logReceiver(int sockfd, HEADER header){
     bool grant = true;
 
     // 最初のAppendEntriesはReceiverでheaderを読んでいるのでここでは読まない
-    if (S_RECV(sockfd, buf, header.size, MSG_WAITALL) < 0) ERR;
+    if (S_RECV(sockfd, buf, header.size, MSG_WAITALL) < header.size) ERR;
     memcpy(&arpc, buf, sizeof(append_entries_rpc));
     Log *log = new Log(this->getConfig()->getStorageDirectoryName(), arpc.workerId);
 
@@ -398,6 +419,7 @@ void Raft::logReceiver(int sockfd, HEADER header){
         e.lsn = lsn;
         e.term = arpc.term;
         e.nlog = nlog;
+        D(arpc.lsn); D(arpc.szLog); D(arpc.term);
         assert(lsn>=0);
         assert(nlog>0);
         memcpy(e.xactSet, arpc.log, sizeof(trans_req) * nlog);
@@ -413,8 +435,8 @@ void Raft::logReceiver(int sockfd, HEADER header){
         this->sendRPC(notifierSock, h, (char*)&rae);
 
         // 次のAppendEntriesRPCのheaderを待ち受け
-        if (S_RECV(sockfd, &header, sizeof(HEADER), MSG_WAITALL) < 0) ERR;
-        if (S_RECV(sockfd, buf, header.size, MSG_WAITALL) < 0) ERR;
+        if (S_RECV(sockfd, &header, sizeof(HEADER), MSG_WAITALL) < (ssize_t)sizeof(HEADER)) ERR;
+        if (S_RECV(sockfd, buf, header.size, MSG_WAITALL) < header.size) ERR;
         memcpy(&arpc, buf, sizeof(append_entries_rpc));
 
     }
@@ -458,9 +480,9 @@ void Raft::producer(int sockfd, HEADER header, ClientNode *cNode, int workerId){
     // response request location
     RaftNode* leader = this->getLeader();
     request_location rl;
-    S_RECV(sockfd, &rl, header.size, MSG_WAITALL);
+    if (S_RECV(sockfd, &rl, header.size, MSG_WAITALL) < header.size) ERR;
     response_request_location rrl = rrlByFields(leader->getHostname().c_str(), leader->getListenPort());
-    HEADER h; h.kind = RESPONSE_REQUEST_LOCATION;	h.size = sizeof(response_request_location);
+    HEADER h; h.kind = RESPONSE_REQUEST_LOCATION;      h.size = sizeof(response_request_location);
 
     this->sendRPC(cNode, h, (char *)&rrl);
 
@@ -468,12 +490,13 @@ void Raft::producer(int sockfd, HEADER header, ClientNode *cNode, int workerId){
     trans_req tx;
 
     while(true) {
-        if (S_RECV(sockfd, &header, sizeof(HEADER), MSG_WAITALL) < 0) ERR;
+        ssize_t r = S_RECV(sockfd, &header, sizeof(HEADER), MSG_WAITALL); //thread 13 teishi point
+        if (r < 0) ERR;
+        D(header.kind); D(header.size);
 
-        if (header.kind == CLIENT_COMMAND){
-            if (S_RECV(sockfd, &cc, header.size, MSG_WAITALL) < 0) ERR;
-
-
+        if (r == sizeof(HEADER) && header.kind == CLIENT_COMMAND){
+            if (S_RECV(sockfd, &cc, header.size, MSG_WAITALL) < header.size) ERR;
+            N;
             for (int i = 0; i < MAX_CLI_REQ; i++) {
                 memcpy(&tx.req, &cc.req[i], sizeof(client_request));
                 tx.commandId = cc.commandId;
@@ -491,7 +514,7 @@ void Raft::producer(int sockfd, HEADER header, ClientNode *cNode, int workerId){
 
 void Raft::setupLeader()
 {
-
+    N;
     int sockfd;
     // dummy vote
     this->getStatus()->setVotedFor(this->getMe());
@@ -509,8 +532,8 @@ void Raft::setupLeader()
 
     // create worker thread
     for(int i=0; i<WORKER_NUM; i++){
-    	vector<follower_info*> *followers = new vector<follower_info*>;
-   	for (RaftNode* rNode : *this->getRaftNodes()) {
+        vector<follower_info*> *followers = new vector<follower_info*>;
+        for (RaftNode* rNode : *this->getRaftNodes()) {
             if (!rNode->isMe()) {
                 follower_info* follower = (follower_info*)malloc(sizeof(follower_info));
                 follower->sockfd = -1;
@@ -536,7 +559,7 @@ void Raft::transmitter() // or timer
     }
     while(true){
         // transmitter
-        sleep(60);
+        sleep_for(std::chrono::seconds(60)); //thread 3 teishi point
     }
 }
 
@@ -564,12 +587,20 @@ KVS* Raft::getKVS() {
 }
 
 void Raft::setRaftNodesByConfig() {
+    N;
     int cnt = 0;
     for (node_conf* nconf : this->config->getNodes()) {
         RaftNode* rNode = new RaftNode(nconf->hostname, nconf->port);
         rNode->setID(cnt);
         this->raftNodes->push_back(rNode);
         cnt++;
+    }
+    int m = this->getMe();
+    if (m >= 0 && m < cnt) {
+        RaftNode* rNode = this->getRaftNodes()->at(m);
+        rNode->setIsMe(true);
+        cout << "I am \"" << rNode->getHostname() << ":\t" << rNode->getListenPort() << "\"." << endl;
+        return;
     }
 
     struct ifaddrs* ifa_list;
@@ -590,14 +621,20 @@ void Raft::setRaftNodesByConfig() {
             inet_ntop(AF_INET,
                       &((struct sockaddr_in*)ifa->ifa_addr)->sin_addr,
                       addrstr, sizeof(addrstr));
+            S(addrstr);
             for (RaftNode* rNode : *this->getRaftNodes()) {
+                S(rNode->getHostname().c_str());
                 if (strcmp(rNode->getHostname().c_str(), addrstr) == 0) {
                     rNode->setIsMe(true);
                     this->setMe(rNode->getID());
+                    D(rNode->getID());
+                    D(rNode->getListenPort());
+                    goto setme_end; // only one is me
                 }
             }
         }
     }
+ setme_end:
 
     // Debug
     for (RaftNode* rNode : *this->getRaftNodes()) {
@@ -628,6 +665,7 @@ WorkerInfo* Raft::getWorkerInfoById(int id){
 }
 
 RaftNode* Raft::getLeader() {
+    assert(this->status->getVotedFor() >= 0);
     return (*this->raftNodes)[this->status->getVotedFor()];
 }
 
@@ -711,6 +749,7 @@ void Raft::sendRPC(ClientNode* me, HEADER h, char *payload)
 }
 
 int Raft::connect2raftnode(RaftNode* rNode) {
+    N;
     // return if I have already connected to rNode
     //if (rNode->getSendSock() > 0) return -1;
 
@@ -733,6 +772,7 @@ int Raft::connect2raftnode(RaftNode* rNode) {
     strcpy(hostname, rNode->getHostname().c_str());
     char port[LEN_PORT];
     sprintf(port, "%d", rNode->getListenPort());
+    S(hostname); S(port);
 
     int err = S_GETADDRINFO(hostname, port, &hints, &ai); if (err) ERR;
     if ((fd = S_SOCKET(ai->ai_family, SOCK_STREAM, 0)) == -1) ERR;
@@ -752,6 +792,13 @@ int Raft::connect2raftnode(RaftNode* rNode) {
     while (S_CONNECT(fd, S_DST_ADDR(ai), S_DST_ADDRLEN(ai)) == -1) sleep(1);
     //else rNode->setSendSock(fd);
     S_FREEADDRINFO(ai);
+
+    // notify port number
+    HEADER h;
+    h.kind = NOTIFY_PORT;
+    h.size = this->getRaftNodes()->at(this->getMe())->getListenPort();
+    S_SEND(fd, &h, sizeof(HEADER), 0);
+
     return fd;
 }
 
