@@ -17,6 +17,7 @@
 
 #include "raft.h"
 #include "worker.h"
+#include "twopl.h"
 #include <atomic>
 #include <unistd.h>
 
@@ -201,21 +202,7 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
                             trans_req xact;
                             memcpy(&xact, &t.xactSet[i], sizeof(trans_req));
 
-                            int fromKey = xact.req.from;
-                            int toKey = xact.req.to;
-                            int diffVal = xact.req.diff;
-
-                            int fromVal = kvs->index_read(fromKey);
-                            int toVal = kvs->index_read(toKey);
-                            fromVal -= diffVal;
-                            toVal += diffVal;
-
-                            kvs->index_update(fromKey, fromVal);
-                            kvs->index_update(toKey, toVal);
-
-                            //unlock
-                            kvs->unlock(fromKey);
-                            kvs->unlock(toKey);
+                            commitWork(kvs, xact.req);
 
                             workerInfo->setCommitIndex(nextIndex);
                             for (ClientNode* cNode : *this->getClientNodes()) {
@@ -238,6 +225,7 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
     }
 }
 
+/*
 int Raft::getLogSequenceNumber()
 {
     int lsn;
@@ -245,6 +233,7 @@ int Raft::getLogSequenceNumber()
     lsn = atomic_fetch_add(&_lsn, 1);
     return lsn;
 }
+*/
 
 
 struct timeval
@@ -296,53 +285,19 @@ void Raft::worker(WorkerInfo* workerInfo) {
             xact = workerInfo->xactDequeue(); //thread 5,6,7,8,9,10,11,12 teishi point
         }
         if (xact.clientId != -1) { // Xact exists!
-            assert(xact.req.from != xact.req.to);
-
-            // sort
-            int tmp;
-            if(xact.req.from > xact.req.to){
-                tmp = xact.req.from;
-                xact.req.from = xact.req.to;
-                xact.req.to = tmp;
-            }
-
-            if (kvs->lock(xact.req.from) == true) { //thread 4 teishi point
-                if (kvs->lock(xact.req.to) == true) {
-                    //D(buffid);
-                    // Insert to local log buffer
-                    memcpy(&logBuffer[buffid], &xact, sizeof(trans_req));
-                    canDoXactDeq = true;
-                    buffid++;
-                } else { // [to] lock failure
-                    kvs->unlock(xact.req.from);
-                    canDoXactDeq = false;
-                }
-            } else {
-                canDoXactDeq = false;
+            canDoXactDeq = transactionWork(kvs, xact.req);
+            if (canDoXactDeq) {
+                memcpy(&logBuffer[buffid], &xact, sizeof(trans_req));
+                buffid++;
             }
         }
 
         if ((timeOut(preLogSend) && buffid > 0) || (buffid == MAX_GROUP_ENTRY)) {
             assert(buffid >0 );
 
-
-            entry e;
-            int lsn = getLogSequenceNumber(); // lsn == global-log-index
-            D(lsn);
-            // uint
-            assert(lsn>=0);
-
             int nlog = buffid;
             buffid = 0;
-
-            e.lsn = lsn;
-            e.term = status->getCurrentTerm();
-            e.nlog = nlog;
-            memcpy(e.xactSet, logBuffer, sizeof(trans_req) * nlog);
-            gettimeofday(&e.time, NULL);
-            // Write log to storage
-            log->addEntry(e);
-
+            int lsn = loggingWork(log, logBuffer, nlog, status->getCurrentTerm());
 
             // Send to follower
             for (follower_info* fi : *workerInfo->getFollowers()) {
@@ -413,19 +368,7 @@ void Raft::logReceiver(int sockfd, HEADER header){
     while(true){
 
         grant = true;
-        entry e;
-        int lsn = arpc.lsn; // lsn == global-log-index
-        int nlog = arpc.szLog;
-        e.lsn = lsn;
-        e.term = arpc.term;
-        e.nlog = nlog;
-        D(arpc.lsn); D(arpc.szLog); D(arpc.term);
-        assert(lsn>=0);
-        assert(nlog>0);
-        memcpy(e.xactSet, arpc.log, sizeof(trans_req) * nlog);
-        gettimeofday(&e.time, NULL);
-        // Write log to storage
-        log->addEntry(e);
+        loggingWork(log, arpc);
 
         // set follower commit Index
         // commitIndexをファイルに永続化する

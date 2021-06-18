@@ -6,7 +6,7 @@ CC := g++
 CFLAGS := -g -c -O0 -std=c++11 -I../include -Wall
 LDFLAGS := -lm -pthread
 
-S1 := clientnode.cc config.cc filehandler.cc functions.cc kvs.cc log.cc main.cc node.cc raftnode.cc rpc.cc status.cc worker.cc
+S1 := clientnode.cc config.cc filehandler.cc functions.cc kvs.cc log.cc main.cc node.cc raftnode.cc rpc.cc status.cc worker.cc twopl.cc
 O1 := $(S1:%.cc=%.o)
 
 all: $(T1) $(T2)
