@@ -14,12 +14,19 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
+#define SILO
 
 #include "raft.h"
 #include "worker.h"
-#include "twopl.h"
+//#include "twopl.h"
+#include "logging.h"
 #include <atomic>
 #include <unistd.h>
+
+#ifdef SILO
+#include "../silo/include/silo_util.hh"
+#include "../silo/include/transaction.hh"
+#endif
 
 int group_size[MAX_GROUP_ENTRY+1] = {0};
 
@@ -202,7 +209,7 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
                             trans_req xact;
                             memcpy(&xact, &t.xactSet[i], sizeof(trans_req));
 
-                            commitWork(kvs, xact.req);
+                            //commitWork(kvs, xact.req);
 
                             workerInfo->setCommitIndex(nextIndex);
                             for (ClientNode* cNode : *this->getClientNodes()) {
@@ -260,6 +267,46 @@ timeOut(struct timeval prev)
 }
 
 
+bool transactionWork(TxnExecutor &trans, client_request &req)
+{
+    union {
+        char val[VAL_SIZE];
+        int32_t amount;
+    } from, to;
+
+    assert(req.from != req.to);
+
+    // sort
+    int tmp;
+    if(req.from > req.to){
+        tmp = req.from;
+        req.from = req.to;
+        req.to = tmp;
+        req.diff = -req.diff;
+    }
+
+    trans.begin();
+
+    // transfer
+    trans.read(req.from);
+    trans.read(req.to);
+    memcpy(from.val, trans.read_set_[0].val_, VAL_SIZE);
+    memcpy(to.val, trans.read_set_[1].val_, VAL_SIZE);
+    from.amount -= req.diff;
+    to.amount += req.diff;
+    trans.write(req.from, from.val);
+    trans.write(req.to, to.val);
+
+    if (trans.validationPhase()) {
+        trans.writePhase();
+        return true;
+    } else {
+        trans.abort();
+        return false;
+    }
+}
+
+
 void Raft::worker(WorkerInfo* workerInfo) {
     //N;
 
@@ -269,6 +316,7 @@ void Raft::worker(WorkerInfo* workerInfo) {
     Log *log = workerInfo->getLog();
     struct timeval preLogSend;
     log = new Log(this->getConfig()->getStorageDirectoryName(), workerId);
+    TxnExecutor trans(workerId);
     D(workerId);
 
     //int matchIndex; // found in paper
@@ -285,7 +333,7 @@ void Raft::worker(WorkerInfo* workerInfo) {
             xact = workerInfo->xactDequeue(); //thread 5,6,7,8,9,10,11,12 teishi point
         }
         if (xact.clientId != -1) { // Xact exists!
-            canDoXactDeq = transactionWork(kvs, xact.req);
+            canDoXactDeq = transactionWork(trans, xact.req);
             if (canDoXactDeq) {
                 memcpy(&logBuffer[buffid], &xact, sizeof(trans_req));
                 buffid++;

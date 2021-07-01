@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-
+#define SILO
 
 #include <stdio.h>
 #include <iostream>
@@ -24,6 +24,12 @@
 #include "header.h"
 #include "raft.h"
 #include "debug.h"
+#ifdef SILO
+#define GLOBAL_VALUE_DEFINE
+#include "../silo/include/common.hh"
+#include "../silo/include/transaction.hh"
+#include "../silo/include/silo_util.hh"
+#endif
 
 using std::cout;
 using std::endl;
@@ -54,6 +60,13 @@ main(int argc, char* argv[])
     printf("===            RAFT            ===\n");
     printf("===                            ===\n");
     printf("==================================\n");
+
+#ifdef SILO
+    gflags::SetUsageMessage("Silo benchmark.");
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+    chkArg();
+    makeDB();
+#endif
 
     std::shared_ptr<Raft> raft;
     if (argc==3) {
