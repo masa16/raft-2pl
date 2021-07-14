@@ -47,7 +47,11 @@
 
 #include "config.h"
 #include "debug.h"
+#ifdef SILO
+#include "../silo/include/db.hh"
+#else
 #include "kvs.h"
+#endif
 #include "status.h"
 #include "node.h"
 #include "raftnode.h"
@@ -89,7 +93,9 @@ using std::chrono::system_clock;
 
 class Config;
 class Status;
+#ifndef SILO
 class KVS;
+#endif
 class Raft;
 class RaftNode;
 class ClientNode;
@@ -118,7 +124,10 @@ private:
 
     Config* config;
     Status* status;
+#ifndef SILO
     KVS* kvs;
+#endif
+    DB db_;
     vector<RaftNode*>* raftNodes;
     vector<ClientNode*>* clientNodes;
     vector<WorkerInfo*>* workerInfos;
@@ -191,8 +200,9 @@ public:
 
     Config* getConfig();
     Status* getStatus();
+#ifndef SILO
     KVS* getKVS();
-
+#endif
     vector<RaftNode*>* getRaftNodes();
     RaftNode* getRaftNodeById(int id);
     RaftNode* getLeader();

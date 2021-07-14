@@ -10,7 +10,7 @@ CXX_DEFINES = -DADD_ANALYSIS=0 -DBACK_OFF=0 -DBOOST_ALL_NO_LIB -DBOOST_FILESYSTE
 
 S1 := clientnode.cc config.cc filehandler.cc functions.cc kvs.cc log.cc main.cc node.cc raftnode.cc rpc.cc status.cc worker.cc logging.cc
 O1 := $(S1:%.cc=%.o)
-OBJS=../silo/transaction.o ../silo/silo_util.o
+OBJS=../silo/transaction.o ../silo/silo_util.o ../silo/db.o
 
 all: $(T1) $(T2)
 

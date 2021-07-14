@@ -65,7 +65,6 @@ main(int argc, char* argv[])
     gflags::SetUsageMessage("Silo benchmark.");
     gflags::ParseCommandLineFlags(&argc, &argv, true);
     chkArg();
-    makeDB();
 #endif
 
     std::shared_ptr<Raft> raft;

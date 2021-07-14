@@ -26,6 +26,8 @@
 #ifdef SILO
 #include "../silo/include/silo_util.hh"
 #include "../silo/include/transaction.hh"
+#include "../silo/include/db.hh"
+DB db;
 #endif
 
 int group_size[MAX_GROUP_ENTRY+1] = {0};
@@ -42,7 +44,11 @@ Raft::Raft(char* configFileName, int me) {
     this->status = new Status(this->getConfig()->getStorageDirectoryName());
     this->status->setState(FOLLOWER);
     this->resetTimeoutTime();
+#ifdef SILO
+    db_.makeDB(FLAGS_tuple_num);
+#else
     this->kvs = new KVS();
+#endif
     // others
     this->leaderTerm = this->status->getCurrentTerm();
     this->vote = 0;
@@ -184,7 +190,9 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
     char buf[sizeof(response_append_entries)];
     response_append_entries ack;
 
+#ifndef SILO
     KVS* kvs = this->getKVS();
+#endif
     int clusterSize = this->getRaftNodes()->size();
 
 
@@ -266,47 +274,6 @@ timeOut(struct timeval prev)
     return false;
 }
 
-
-bool transactionWork(TxnExecutor &trans, client_request &req)
-{
-    union {
-        char val[VAL_SIZE];
-        int32_t amount;
-    } from, to;
-
-    assert(req.from != req.to);
-
-    // sort
-    int tmp;
-    if(req.from > req.to){
-        tmp = req.from;
-        req.from = req.to;
-        req.to = tmp;
-        req.diff = -req.diff;
-    }
-
-    trans.begin();
-
-    // transfer
-    trans.read(req.from);
-    trans.read(req.to);
-    memcpy(from.val, trans.read_set_[0].val_, VAL_SIZE);
-    memcpy(to.val, trans.read_set_[1].val_, VAL_SIZE);
-    from.amount -= req.diff;
-    to.amount += req.diff;
-    trans.write(req.from, from.val);
-    trans.write(req.to, to.val);
-
-    if (trans.validationPhase()) {
-        trans.writePhase();
-        return true;
-    } else {
-        trans.abort();
-        return false;
-    }
-}
-
-
 void Raft::worker(WorkerInfo* workerInfo) {
     //N;
 
@@ -316,7 +283,7 @@ void Raft::worker(WorkerInfo* workerInfo) {
     Log *log = workerInfo->getLog();
     struct timeval preLogSend;
     log = new Log(this->getConfig()->getStorageDirectoryName(), workerId);
-    TxnExecutor trans(workerId);
+    TxnExecutor trans(db, workerId);
     D(workerId);
 
     //int matchIndex; // found in paper
@@ -333,7 +300,7 @@ void Raft::worker(WorkerInfo* workerInfo) {
             xact = workerInfo->xactDequeue(); //thread 5,6,7,8,9,10,11,12 teishi point
         }
         if (xact.clientId != -1) { // Xact exists!
-            canDoXactDeq = transactionWork(trans, xact.req);
+            canDoXactDeq = trans.transferWork(xact.req);
             if (canDoXactDeq) {
                 memcpy(&logBuffer[buffid], &xact, sizeof(trans_req));
                 buffid++;
@@ -573,9 +540,11 @@ Config* Raft::getConfig() {
 Status* Raft::getStatus() {
     return this->status;
 }
+#ifndef SILO
 KVS* Raft::getKVS() {
     return this->kvs;
 }
+#endif
 
 void Raft::setRaftNodesByConfig() {
     N;
