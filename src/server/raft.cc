@@ -18,7 +18,6 @@
 
 #include "raft.h"
 #include "worker.h"
-//#include "twopl.h"
 #include "logging.h"
 #include <atomic>
 #include <unistd.h>
@@ -27,7 +26,8 @@
 #include "../silo/include/silo_util.hh"
 #include "../silo/include/transaction.hh"
 #include "../silo/include/db.hh"
-DB db;
+#else
+#include "twopl.h"
 #endif
 
 int group_size[MAX_GROUP_ENTRY+1] = {0};
@@ -283,7 +283,7 @@ void Raft::worker(WorkerInfo* workerInfo) {
     Log *log = workerInfo->getLog();
     struct timeval preLogSend;
     log = new Log(this->getConfig()->getStorageDirectoryName(), workerId);
-    TxnExecutor trans(db, workerId);
+    TxnExecutor trans(db_, workerId);
     D(workerId);
 
     //int matchIndex; // found in paper
