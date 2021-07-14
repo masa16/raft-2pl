@@ -14,7 +14,7 @@ CC = g++
 CFLAGS = -g -c -O0 -std=c++11 -I./include -Wall
 LDFLAGS = -lm -lgflags -pthread
 
-S1 := silo.cc transaction.cc silo_util.cc
+S1 := transaction.cc silo_util.cc db.cc
 O1 := $(S1:%.cc=%.o)
 
 all: $(O1)

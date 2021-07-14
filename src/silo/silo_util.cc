@@ -16,7 +16,6 @@
 //#include "include/atomic_tool.hh"
 #include "include/common.hh"
 #include "include/transaction.hh"
-#include "include/tuple.hh"
 #include "include/silo_util.hh"
 
 #include "include/cache_line_size.hh"
@@ -28,19 +27,6 @@
 #include "include/tsc.hh"
 //#include "include/util.hh"
 //#include "include/zipf.hh"
-
-/*
-alignas(CACHE_LINE_SIZE) Tuple *Table;
-alignas(CACHE_LINE_SIZE) std::atomic<uint64_t> *ThLocalEpoch;
-alignas(CACHE_LINE_SIZE) std::atomic<uint64_t> *CTIDW;
-alignas(CACHE_LINE_SIZE) std::atomic<uint64_t> *ThLocalDurableEpoch;
-alignas(CACHE_LINE_SIZE) std::atomic<uint64_t> DurableEpoch;
-
-int FLAGS_thread_num = 9;
-int FLAGS_tuple_num = 10;
-int FLAGS_epoch_time = 40;
-int FLAGS_clocks_per_us = 2000;
-*/
 
 void chkArg() {
     displayParameter();
@@ -85,19 +71,6 @@ void chkArg() {
 #endif
 }
 
-void displayDB() {
-    Tuple *tuple;
-    for (unsigned int i = 0; i < FLAGS_tuple_num; ++i) {
-        tuple = &Table[i];
-        cout << "------------------------------" << endl;  //-は30個
-        cout << "key: " << i << endl;
-        cout << "val: " << tuple->val_ << endl;
-        cout << "TIDword: " << tuple->tidword_.load(std::memory_order_relaxed).obj_ << endl;
-        cout << "bit: " << tuple->tidword_.load(std::memory_order_relaxed).obj_ << endl;
-        cout << endl;
-    }
-}
-
 void displayParameter() {
     cout << "#FLAGS_clocks_per_us:\t" << FLAGS_clocks_per_us << endl;
     cout << "#FLAGS_epoch_time:\t" << FLAGS_epoch_time << endl;
@@ -124,61 +97,6 @@ void displayParameter() {
   }
 */
 
-void partTableInit([[maybe_unused]] size_t thid, uint64_t start, uint64_t end) {
-#if MASSTREE_USE
-    MasstreeWrapper<Tuple>::thread_init(thid);
-#endif
-
-    for (auto i = start; i <= end; ++i) {
-        Tuple *tmp;
-        Tidword tidw;
-        tidw.epoch = 1;
-        tidw.latest = 1;
-        tidw.lock = 0;
-        tmp = &Table[i];
-        tmp->tidword_.store(tidw, std::memory_order_relaxed);
-        tmp->val_[0] = 'a';
-        tmp->val_[1] = '\0';
-
-#if MASSTREE_USE
-        MT.insert_value(i, tmp);
-#endif
-    }
-}
-
-size_t decideParallelBuildNumber(size_t tuple_num) {
-    // if table size is very small, it builds by single thread.
-    if (tuple_num < 1000) return 1;
-
-    // else
-    for (size_t i = std::thread::hardware_concurrency(); i > 0; --i) {
-        if (tuple_num % i == 0) {
-            return i;
-        }
-        if (i == 1) ERR;
-    }
-
-    return 0;
-}
-
-void makeDB() {
-    if (posix_memalign((void **) &Table, PAGE_SIZE,
-                       (FLAGS_tuple_num) * sizeof(Tuple)) != 0)
-        ERR;
-#if dbs11
-    if (madvise((void *)Table, (FLAGS_tuple_num) * sizeof(Tuple),
-                MADV_HUGEPAGE) != 0)
-        ERR;
-#endif
-
-    size_t maxthread = decideParallelBuildNumber(FLAGS_tuple_num);
-
-    std::vector<std::thread> thv;
-    for (size_t i = 0; i < maxthread; ++i)
-        thv.emplace_back(partTableInit, i, i * (FLAGS_tuple_num / maxthread),
-                         (i + 1) * (FLAGS_tuple_num / maxthread) - 1);
-    for (auto &th : thv) th.join();
-}
 
 bool chkEpochLoaded() {
     uint64_t nowepoch = GlobalEpoch.load(std::memory_order_acquire);

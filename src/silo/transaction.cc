@@ -6,10 +6,11 @@
 //#include "include/atomic_wrapper.hh"
 //#include "include/log.hh"
 #include "include/transaction.hh"
+#include "../include/header.h"
 
 extern void displayDB();
 
-TxnExecutor::TxnExecutor(int thid) : thid_(thid) {
+TxnExecutor::TxnExecutor(DB &db, int thid) : db_(db), thid_(thid) {
     read_set_.reserve(FLAGS_max_ope);
     write_set_.reserve(FLAGS_max_ope);
     pro_set_.reserve(FLAGS_max_ope);
@@ -94,7 +95,7 @@ void TxnExecutor::read(std::uint64_t key) {
      * Search tuple from data structure.
      */
     Tuple *tuple;
-    tuple = get_tuple(Table, key);
+    tuple = db_.get_tuple(key);
 
     //(a) reads the TID word, spinning until the lock is clear
 
@@ -253,7 +254,7 @@ void TxnExecutor::write(std::uint64_t key, std::string_view val) {
     if (re) {
         tuple = re->rcdptr_;
     } else {
-        tuple = get_tuple(Table, key);
+        tuple = db_.get_tuple(key);
     }
 
     write_set_.emplace_back(key, tuple, val);
@@ -328,3 +329,42 @@ bool TxnExecutor::transactionWork()
     }
 }
 */
+
+bool TxnExecutor::transferWork(client_request &req)
+{
+    union {
+        char val[VAL_SIZE];
+        int32_t amount;
+    } from, to;
+
+    assert(req.from != req.to);
+
+    // sort
+    int tmp;
+    if(req.from > req.to){
+        tmp = req.from;
+        req.from = req.to;
+        req.to = tmp;
+        req.diff = -req.diff;
+    }
+
+    begin();
+
+    // transfer
+    read(req.from);
+    read(req.to);
+    memcpy(from.val, read_set_[0].val_, VAL_SIZE);
+    memcpy(to.val, read_set_[1].val_, VAL_SIZE);
+    from.amount -= req.diff;
+    to.amount += req.diff;
+    write(req.from, from.val);
+    write(req.to, to.val);
+
+    if (validationPhase()) {
+        writePhase();
+        return true;
+    } else {
+        abort();
+        return false;
+    }
+}

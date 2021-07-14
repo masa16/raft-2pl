@@ -68,5 +68,3 @@ alignas(CACHE_LINE_SIZE) GLOBAL std::atomic<uint64_t> *ThLocalEpoch;
 alignas(CACHE_LINE_SIZE) GLOBAL std::atomic<uint64_t> *CTIDW;
 alignas(CACHE_LINE_SIZE) GLOBAL std::atomic<uint64_t> *ThLocalDurableEpoch;
 alignas(CACHE_LINE_SIZE) GLOBAL std::atomic<uint64_t> DurableEpoch;
-
-alignas(CACHE_LINE_SIZE) GLOBAL Tuple *Table;

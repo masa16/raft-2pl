@@ -5,6 +5,7 @@
 #include <string_view>
 #include <vector>
 #include <queue>
+#include <cassert>
 
 //#include "fileio.hh"
 #include "procedure.hh"
@@ -13,11 +14,14 @@
 #include "common.hh"
 //#include "log.hh"
 #include "silo_op_element.hh"
-#include "tuple.hh"
+#include "db.hh"
+
 #if DURABLE_EPOCH
 #include "log_buffer.hh"
 #include "notifier.hh"
 #endif
+
+#include "../../include/header.h"
 
 #define LOGSET_SIZE 1000
 
@@ -35,6 +39,8 @@ public:
 
     //std::vector<LogRecord> log_set_;
     //LogHeader latest_log_header_;
+
+    DB &db_;
 
     TransactionStatus status_;
     unsigned int thid_;
@@ -58,7 +64,7 @@ public:
     int logger_thid_;
 #endif
 
-    TxnExecutor(int thid);
+    TxnExecutor(DB &db, int thid);
 
     /**
      * @brief function about abort.
@@ -124,7 +130,7 @@ public:
 
     void writePhase();
 
-    bool transactionWork();
+    bool transferWork(client_request &req);
 
 #if DURABLE_EPOCH
     bool pauseCondition();

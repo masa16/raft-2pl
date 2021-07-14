@@ -33,6 +33,7 @@
 #include "include/tsc.hh"
 //#include "include/util.hh"
 #include "include/zipf.hh"
+#include "include/db.hh"
 
 #include "synchronizer.hh"
 #include "statistics.hh"
@@ -46,6 +47,7 @@ uint *GlobalLSN;
 #define FLAG_PARTITION false
 #endif
 
+static DB db;
 static Synchronizer synchronizer;
 std::vector<Statistics> SiloStats(FLAGS_thread_num);
 
@@ -102,7 +104,7 @@ void worker(int thid)
     Statistics &stats = std::ref(SiloStats[thid]);
     Xoroshiro128Plus rnd;
     rnd.init();
-    TxnExecutor trans(thid);
+    TxnExecutor trans(db, thid);
     FastZipf zipf(&rnd, FLAGS_zipf_skew, FLAGS_tuple_num);
     uint64_t epoch_timer_start, epoch_timer_stop;
 
@@ -141,7 +143,7 @@ int main(int argc, char *argv[]) {
         gflags::SetUsageMessage("Silo benchmark.");
         gflags::ParseCommandLineFlags(&argc, &argv, true);
         chkArg();
-        makeDB();
+        db.makeDB(FLAGS_tuple_num);
 
         synchronizer.init_count(FLAGS_thread_num);
         std::vector<std::thread> thv;
