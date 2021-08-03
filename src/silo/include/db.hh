@@ -1,5 +1,6 @@
 #pragma once
 #include "tuple.hh"
+#include "../../include/header.h"
 
 class DB {
 private:
@@ -10,4 +11,5 @@ public:
     void makeDB(uint64_t tuple_num);
     void display();
     Tuple *get_tuple(std::uint64_t key);
+    void commitWork(client_request &req);
 };

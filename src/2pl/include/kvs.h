@@ -21,9 +21,9 @@
 #include <map>
 #include <list>
 #include <vector>
-#include "debug.h"
+#include "../../include/debug.h"
 #include <xmmintrin.h>
-#include "constant.h"
+#include "../../include/constant.h"
 
 using std::map;
 

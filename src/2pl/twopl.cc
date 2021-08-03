@@ -6,9 +6,14 @@
 #include "header.h"
 #include "config.h"
 #include "debug.h"
-#include "twopl.h"
+#include "include/twopl.hh"
 
-bool transactionWork(KVS *kvs, client_request &req)
+void DB::makeDB(uint64_t tuple_num) {
+    tuple_num_ = tuple_num;
+    kvs_ = new KVS();
+}
+
+bool TxnExecutor::transferWork(client_request &req)
 {
     assert(req.from != req.to);
 
@@ -20,12 +25,12 @@ bool transactionWork(KVS *kvs, client_request &req)
         req.to = tmp;
     }
 
-    if (kvs->lock(req.from) == true) { //thread 4 teishi point
-        if (kvs->lock(req.to) == true) {
+    if (db_.kvs_->lock(req.from) == true) { //thread 4 teishi point
+        if (db_.kvs_->lock(req.to) == true) {
             //D(buffid);
             return true;
         } else { // [to] lock failure
-            kvs->unlock(req.from);
+            db_.kvs_->unlock(req.from);
             return false;
         }
     } else {
@@ -33,20 +38,20 @@ bool transactionWork(KVS *kvs, client_request &req)
     }
 }
 
-void commitWork(KVS *kvs, client_request &req) {
+void DB::commitWork(client_request &req) {
     int fromKey = req.from;
     int toKey = req.to;
     int diffVal = req.diff;
 
-    int fromVal = kvs->index_read(fromKey);
-    int toVal = kvs->index_read(toKey);
+    int fromVal = kvs_->index_read(fromKey);
+    int toVal = kvs_->index_read(toKey);
     fromVal -= diffVal;
     toVal += diffVal;
 
-    kvs->index_update(fromKey, fromVal);
-    kvs->index_update(toKey, toVal);
+    kvs_->index_update(fromKey, fromVal);
+    kvs_->index_update(toKey, toVal);
 
     //unlock
-    kvs->unlock(fromKey);
-    kvs->unlock(toKey);
+    kvs_->unlock(fromKey);
+    kvs_->unlock(toKey);
 }

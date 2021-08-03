@@ -15,7 +15,7 @@
  */
 
 
-#include "kvs.h"
+#include "include/kvs.h"
 
 #include <assert.h>
 #include <unistd.h>

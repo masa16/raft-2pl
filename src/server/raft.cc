@@ -14,7 +14,6 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-#define SILO
 
 #include "raft.h"
 #include "worker.h"
@@ -26,8 +25,10 @@
 #include "../silo/include/silo_util.hh"
 #include "../silo/include/transaction.hh"
 #include "../silo/include/db.hh"
-#else
-#include "twopl.h"
+#endif
+#ifdef TWOPL
+#include "../2pl/include/twopl.hh"
+#define FLAGS_tuple_num 0
 #endif
 
 int group_size[MAX_GROUP_ENTRY+1] = {0};
@@ -44,11 +45,7 @@ Raft::Raft(char* configFileName, int me) {
     this->status = new Status(this->getConfig()->getStorageDirectoryName());
     this->status->setState(FOLLOWER);
     this->resetTimeoutTime();
-#ifdef SILO
     db_.makeDB(FLAGS_tuple_num);
-#else
-    this->kvs = new KVS();
-#endif
     // others
     this->leaderTerm = this->status->getCurrentTerm();
     this->vote = 0;
@@ -190,9 +187,6 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
     char buf[sizeof(response_append_entries)];
     response_append_entries ack;
 
-#ifndef SILO
-    KVS* kvs = this->getKVS();
-#endif
     int clusterSize = this->getRaftNodes()->size();
 
 
@@ -217,7 +211,7 @@ void Raft::notifier(int sockfd, int rNodeId, HEADER header){
                             trans_req xact;
                             memcpy(&xact, &t.xactSet[i], sizeof(trans_req));
 
-                            //commitWork(kvs, xact.req);
+                            db_.commitWork(xact.req);
 
                             workerInfo->setCommitIndex(nextIndex);
                             for (ClientNode* cNode : *this->getClientNodes()) {
@@ -540,11 +534,6 @@ Config* Raft::getConfig() {
 Status* Raft::getStatus() {
     return this->status;
 }
-#ifndef SILO
-KVS* Raft::getKVS() {
-    return this->kvs;
-}
-#endif
 
 void Raft::setRaftNodesByConfig() {
     N;

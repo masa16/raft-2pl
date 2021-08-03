@@ -97,3 +97,7 @@ void DB::makeDB(uint64_t tuple_num) {
 Tuple *DB::get_tuple(std::uint64_t key) {
     return &Table[key];
 }
+
+
+void DB::commitWork(client_request &req) {
+}
